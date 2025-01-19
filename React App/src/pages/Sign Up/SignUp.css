@@ -1,0 +1,121 @@
+/* General container styling */
+.profile-container {
+    background-color: black;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    line-height: 1.5;
+}
+
+/* Profile name styling */
+.profile-name {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Profile role styling */
+.profile-role {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+/* Section headings (e.g., Followers, Following) */
+.profile-follow-section h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+    border-bottom: 1px solid white;
+    padding-bottom: 5px;
+}
+
+/* Followers and Following list */
+.profile-follow-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.profile-follow-list li {
+    margin: 5px 0;
+}
+
+.profile-link {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.profile-link:hover {
+    color: gray;
+    text-decoration: underline;
+}
+
+/* Email styling for logged-in users */
+.profile-email {
+    margin-top: 20px;
+    font-size: 1.2rem;
+}
+
+/* Media section styling */
+.profile-media-section {
+    margin-top: 30px;
+}
+
+.profile-media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.profile-media-item {
+    text-align: center;
+    padding: 10px;
+    border: 1px solid white;
+    border-radius: 4px;
+    background-color: #222;
+    color: white;
+    transition: background-color 0.3s ease;
+}
+
+.profile-media-item:hover {
+    background-color: #444;
+}
+
+/* Edit and logout buttons */
+.profile-action-buttons {
+    margin-top: 30px;
+}
+
+.profile-edit-button,
+.profile-logout-button {
+    padding: 10px 15px;
+    background-color: white;
+    color: black;
+    border: none;
+    cursor: pointer;
+    margin-right: 10px;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.profile-edit-button:hover,
+.profile-logout-button:hover {
+    background-color: gray;
+    color: white;
+}
+
+/* Loading and error messages */
+p {
+    color: white;
+    font-size: 1rem;
+    margin: 10px 0;
+}
+.profile-error {
+    color: red;
+    margin-top: 10px;
+    font-size: 1rem;
+}

@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* General body styling */
+body {
+  font-family: 'Montserrat', sans-serif;
+  background-color: #02111b; /* Black background */
+  color: #fff; /* White text */
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Azonix font setup */
+@font-face {
+  font-family: 'Azonix';
+  src: url('https://iambdan.github.io/custom-font-hosting/azonix.woff2') format('woff2'),
+       url('https://iambdan.github.io/custom-font-hosting/azonix.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Shared text styles */
+h1 {
+  font-family: 'Azonix', sans-serif;
+  color: white;
+}
+
+a {
+  text-decoration: none;
+}
+
+button, a {
+  cursor: pointer;
+}
+
+/* Content wrapper */
+.app-content {
+  background-color: #02111b; /* Matches navbar background */
+  min-height: calc(100vh - 70px); /* Full viewport height minus navbar height */
+  margin-top: 70px; /* Navbar height offset */
+  box-sizing: border-box;
+}
+
+/* Navbar styling */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px; /* Default navbar height */
+  background-color: #000; /* Black background */
+  z-index: 1000;
+}
+
+/* Adjustments for larger screens */
+@media (min-width: 769px) {
+  .navbar {
+    height: 90px; /* Larger navbar height for desktops */
+  }
+
+  .app-content {
+    min-height: calc(100vh - 90px); /* Adjusted content height */
+    margin-top: 90px; /* Adjusted navbar height */
+  }
+}
+
+
+/* Section styling */
+.sections-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px;
+  background-color: #02111b;
+}
+
+.section {
+  width: calc(25% - 20px);
+  min-width: 200px;
+  text-align: center;
+  padding: 20px;
+  border: 1px solid #4db0f2;
+  border-radius: 12px;
+  background-color: #1a2634;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f1f1;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  animation: fade-in 0.5s ease-in-out;
+}
+
+.section:hover {
+  transform: scale(1.05);
+  background-color: #2d3b4d;
+}
+
+.section h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.section p {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  color: #a6d7f8;
+}
+
+/* Fade-in animation */
+
+
+body[data-intro="true"] .navbar {
+  display: none !important;
+}
+body[data-intro="true"] .menu-button {
+  display: none !important;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

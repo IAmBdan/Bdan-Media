@@ -1,1 +1,21 @@
-node_modules
+# Ignore environment files and sensitive data
+Node App/.env
+React App/.env
+Node App/us-east-2-bundle.pem
+
+# Node modules
+node_modules/
+
+# Build directories
+React App/build/
+Node App/dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db

@@ -62,11 +62,10 @@ jobs:
           npm install
           CI=false npm run build
 
-   - name: Debug S3 bucket name
-     run: |
-       echo "S3 Bucket Name: ${{ secrets.S3_BUCKET_NAME }}"
+      - name: Debug S3 bucket name
+        run: |
+          echo "S3 Bucket Name: ${{ secrets.S3_BUCKET_NAME }}"
 
-
-    - name: Deploy to S3
-     run: |
-       aws s3 sync "./React App/build" s3://${{ secrets.S3_BUCKET_NAME }} --delete
+      - name: Deploy to S3
+        run: |
+          aws s3 sync "./React App/build" s3://${{ secrets.S3_BUCKET_NAME }} --delete

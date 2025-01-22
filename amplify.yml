@@ -4,10 +4,11 @@ applications:
       phases:
         preBuild:
           commands:
-            - cd "React App" && npm install
+            - cd "React App"
+            - npm install
         build:
           commands:
-            - cd "React App" && npm run build
+            - npm run build
       artifacts:
         baseDirectory: "React App/build"
         files:
@@ -15,15 +16,15 @@ applications:
       cache:
         paths:
           - "React App/node_modules/**/*"
-  
-  - backend:
+    backend:
       phases:
         preBuild:
           commands:
-            - cd "Node App" && npm install
+            - cd "Node App"
+            - npm install
         build:
           commands:
-            - cd "Node App" && node index.js
+            - echo "Backend setup complete"
       artifacts:
         baseDirectory: "Node App"
         files:
@@ -31,3 +32,4 @@ applications:
       cache:
         paths:
           - "Node App/node_modules/**/*"
+  - appRoot: "."

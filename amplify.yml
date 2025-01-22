@@ -1,14 +1,14 @@
 version: 1
 applications:
-  - frontend:
+  - appRoot: "." 
+    frontend:
       phases:
         preBuild:
           commands:
-            - cd "React App"
-            - npm install
+            - cd "React App" && npm install
         build:
           commands:
-            - npm run build
+            - cd "React App" && npm run build
       artifacts:
         baseDirectory: "React App/build"
         files:
@@ -16,15 +16,15 @@ applications:
       cache:
         paths:
           - "React App/node_modules/**/*"
+
     backend:
       phases:
         preBuild:
           commands:
-            - cd "Node App"
-            - npm install
+            - cd "Node App" && npm install
         build:
           commands:
-            - echo "Backend setup complete"
+            - cd "Node App" && echo "Backend setup complete"
       artifacts:
         baseDirectory: "Node App"
         files:
@@ -32,4 +32,3 @@ applications:
       cache:
         paths:
           - "Node App/node_modules/**/*"
-  - appRoot: "."

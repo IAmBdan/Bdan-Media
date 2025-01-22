@@ -1,0 +1,33 @@
+version: 1
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd "React App" && npm install
+        build:
+          commands:
+            - cd "React App" && npm run build
+      artifacts:
+        baseDirectory: "React App/build"
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - "React App/node_modules/**/*"
+  
+  - backend:
+      phases:
+        preBuild:
+          commands:
+            - cd "Node App" && npm install
+        build:
+          commands:
+            - cd "Node App" && node index.js
+      artifacts:
+        baseDirectory: "Node App"
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - "Node App/node_modules/**/*"

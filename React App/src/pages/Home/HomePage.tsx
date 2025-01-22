@@ -16,6 +16,7 @@ const HomePage: React.FC = () => {
       document.body.removeAttribute("data-intro");
     } else {
       // Play intro
+      //   http://localhost:3000/home/?showIntro=true
       setShowIntro(true);
       document.body.setAttribute("data-intro", "true");
     }

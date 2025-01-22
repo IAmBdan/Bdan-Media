@@ -18,12 +18,12 @@ const Footer = () => {
       <span>© 2025 Brian Daniels</span>
       <div style={{ display: "flex", gap: "10px" }}>
         <a
-          href="https://www.instagram.com/bdan.photos"
+          href="https://www.instagram.com/bdanmedia"
           target="_blank"
           rel="noopener noreferrer"
         >
           <img
-            src="https://iambdan.github.io/Bdan.Photos/logos/instagram.png"
+            src="https://s3.us-east-2.amazonaws.com/bdan.photos/instagram.png"
             alt="Instagram"
             style={{
               width: "20px",
@@ -40,12 +40,12 @@ const Footer = () => {
           />
         </a>
         <a
-          href="https://www.tiktok.com/@bdan.photos"
+          href="https://www.tiktok.com/@bdanmedia"
           target="_blank"
           rel="noopener noreferrer"
         >
           <img
-            src="https://iambdan.github.io/Bdan.Photos/logos/tiktok.png"
+            src="https://s3.us-east-2.amazonaws.com/bdan.photos/tiktok.png"
             alt="TikTok"
             style={{
               width: "20px",
@@ -67,7 +67,7 @@ const Footer = () => {
           rel="noopener noreferrer"
         >
           <img
-            src="https://iambdan.github.io/Bdan.Photos/logos/twitter.png"
+            src="https://s3.us-east-2.amazonaws.com/bdan.photos/twitter.png"
             alt="Twitter"
             style={{
               width: "20px",
@@ -89,7 +89,7 @@ const Footer = () => {
           rel="noopener noreferrer"
         >
           <img
-            src="https://iambdan.github.io/Bdan.Photos/logos/email.png"
+            src="https://s3.us-east-2.amazonaws.com/bdan.photos/email.png"
             alt="Email"
             style={{
               width: "20px",

@@ -1,0 +1,54 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main  # Adjust branch as needed
+
+jobs:
+  deploy_backend:
+    name: Deploy Backend to Lightsail
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH and deploy backend
+        env:
+          LIGHTSAIL_PEM_KEY: ${{ secrets.LIGHTSAIL_PEM_KEY }}
+          LIGHTSAIL_IP: ${{ secrets.LIGHTSAIL_IP }}
+        run: |
+          echo "$LIGHTSAIL_PEM_KEY" > lightsail-key.pem
+          chmod 600 lightsail-key.pem
+          ssh -o StrictHostKeyChecking=no -i lightsail-key.pem bitnami@$LIGHTSAIL_IP << 'EOF'
+            cd ~/Bdan-Media/Node\ App
+            git pull origin main
+            npm install --production
+            pm2 restart bdan-backend
+            exit
+          EOF
+
+  deploy_frontend:
+    name: Deploy Frontend to S3
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install AWS CLI
+        run: sudo apt-get install awscli -y
+
+      - name: Deploy to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: "us-east-2"
+          S3_BUCKET: "bdan-media-frontend"
+        run: |
+          cd React\ App
+          npm install
+          npm run build
+          aws s3 sync build s3://$S3_BUCKET --delete
+          echo "Deployment completed. Website URL: http://$S3_BUCKET.s3-website-us-east-2.amazonaws.com"

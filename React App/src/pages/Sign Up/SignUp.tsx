@@ -22,7 +22,6 @@ const SignUpPage: React.FC = () => {
         e.preventDefault();
         setError(''); // Clear any previous errors
         try {
-            const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/auth/register`, formData);
             alert('Account created successfully!');
             navigate('/login'); // Redirect to the login page after successful registration
         } catch (error) {

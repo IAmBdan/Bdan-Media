@@ -37,7 +37,7 @@ const Connect: React.FC = () => {
               className="hover:scale-110 transition-transform"
             >
               <img
-                src="https://iambdan.github.io/Bdan.Photos/logos/instagram.png"
+                src="https://s3.us-east-2.amazonaws.com/bdan.photos/instagram.png"
                 alt="Instagram"
                 className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-slate-500 hover:border-slate-300"
               />
@@ -49,7 +49,7 @@ const Connect: React.FC = () => {
               className="hover:scale-110 transition-transform"
             >
               <img
-                src="https://iambdan.github.io/Bdan.Photos/logos/tiktok.png"
+                src="https://s3.us-east-2.amazonaws.com/bdan.photos/tiktok.png"
                 alt="TikTok"
                 className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-slate-500 hover:border-slate-300"
               />
@@ -61,7 +61,7 @@ const Connect: React.FC = () => {
               className="hover:scale-110 transition-transform"
             >
               <img
-                src="https://iambdan.github.io/Bdan.Photos/logos/twitter.png"
+                src="https://s3.us-east-2.amazonaws.com/bdan.photos/twitter.png"
                 alt="Twitter"
                 className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-slate-500 hover:border-slate-300"
               />
@@ -73,7 +73,8 @@ const Connect: React.FC = () => {
               className="hover:scale-110 transition-transform"
             >
               <img
-                src="https://iambdan.github.io/Bdan.Photos/logos/email.png"
+                src="
+https://s3.us-east-2.amazonaws.com/bdan.photos/email.png"
                 alt="Email"
                 className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-slate-500 hover:border-slate-300"
               />

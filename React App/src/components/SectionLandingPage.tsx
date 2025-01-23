@@ -120,7 +120,7 @@ const SectionLandingPage: React.FC = () => {
   ): Promise<MediaItem | null> => {
     try {
       const mediaRes = await axios.get(
-        `${process.env.AWS_S3_BUCKET_NAME}/api/media/section`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/media/section`,
         { params: { sectionPath: path } }
       );
       let allMedia: MediaItem[] = mediaRes.data || [];

@@ -104,7 +104,7 @@ const TiledLayout: React.FC<TiledLayoutProps> = ({
               >
                 {item.type === "image" ? (
                   <img
-                    src={`https://${process.env.REACT_APP_S3_BUCKET}/${item.s3_key}`}
+                    src={`https://${process.env.AWS_S3_BUCKET_NAME}/${item.s3_key}`}
                     alt={item.tags?.join(", ") || "media"}
                     style={{
                       width: "100%",
@@ -114,7 +114,7 @@ const TiledLayout: React.FC<TiledLayoutProps> = ({
                   />
                 ) : (
                   <video
-                    src={`https://${process.env.REACT_APP_S3_BUCKET}/${item.s3_key}`}
+                    src={`https://${process.env.AWS_S3_BUCKET_NAME}/${item.s3_key}`}
                     controls
                     style={{
                       width: "100%",

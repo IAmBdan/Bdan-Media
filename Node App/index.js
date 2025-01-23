@@ -18,6 +18,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/sections', sectionRoutes);
 
+app.get('/', (req, res) => {
+    res.status(200).send('OK');
+});
+
 app.use((req, res, next) => {
     console.log(`404 Error: No matching route for ${req.method} ${req.url}`);
     res.status(404).send('Not Found');

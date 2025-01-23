@@ -10,7 +10,8 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: '*' }));
+app.use(cors());
+
 // Routes
 app.use('/api/media', mediaRoutes);
 app.use('/api/users', userRoutes);

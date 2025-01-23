@@ -76,7 +76,7 @@ const SectionPage: React.FC = () => {
   const fetchBottomSections = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api`
+        `${process.env.REACT_APP_API_BASE_URL}/api/sections`
       );
       const allSections: Section[] = response.data;
 

@@ -15,7 +15,7 @@ body {
 /* Azonix font setup */
 @font-face {
   font-family: 'Azonix';
-  src: url('https://github.com/IAmBdan/custom-font-hosting/blob/main/azonix-webfont.woff2') format('woff2'),
+  src: url('https://iambdan.github.io/custom-font-hosting/azonix-webfont.woff2') format('woff2'),
        url('https://iambdan.github.io/custom-font-hosting/azonix.woff') format('woff');
   font-weight: normal;
   font-style: normal;

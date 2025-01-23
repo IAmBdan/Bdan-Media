@@ -58,8 +58,9 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "REACT_APP_API_BASE_URL=${{ secrets.REACT_APP_API_BASE_URL }}" > .env
-          echo "REACT_APP_S3_BUCKET=${{ secrets.REACT_APP_S3_BUCKET }}" >> .env
+          echo "REACT_APP_API_BASE_URL=${{ secrets.REACT_APP_API_BASE_URL }}" > "React App/.env"
+          echo "REACT_APP_S3_BUCKET=${{ secrets.REACT_APP_S3_BUCKET }}" >> "React App/.env"
+          cat "React App/.env"  # Debugging: Check if .env has correct values
 
       - name: Build frontend
         run: |
@@ -78,4 +79,4 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync "./React App/build" s3://${{ secrets.S3_BUCKET_NAME }} --delete
+          aws s3 sync "React App/build" s3://${{ secrets.S3_BUCKET_NAME }} --delete

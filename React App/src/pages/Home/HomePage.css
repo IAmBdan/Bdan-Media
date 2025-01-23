@@ -165,3 +165,30 @@
     }
     
   }
+
+
+
+  /* Small screens (< 768px) */
+  @media (max-width: 400px) {
+    .main-text {
+      top: 20%;          /* raise text a bit more on mobile */
+      font-size: 4rem;   /* smaller to avoid clipping */
+      max-width: 90%;    /* ensures no right-side clipping */
+      left: 50.75%;
+      right: 50.75%;
+      
+      transform: translate(-50%, -50%);
+    }
+    .main-content {
+      margin-top: 25vh; /* reduce so buttons appear higher */
+    }
+    .nav-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+    .nav-buttons a {
+      width: 250px;
+      text-align: center;
+    }
+    
+  }

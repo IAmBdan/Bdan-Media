@@ -143,12 +143,13 @@
   }
   
   /* Small screens (< 768px) */
-  @media (max-width: 768px) {
+  @media  (min-width: 490px) and (max-width: 768px) {
     .main-text {
       top: 20%;          /* raise text a bit more on mobile */
       font-size: 4rem;   /* smaller to avoid clipping */
       max-width: 90%;    /* ensures no right-side clipping */
       left: 50.75%;
+      
       
       transform: translate(-50%, -50%);
     }
@@ -169,13 +170,13 @@
 
 
   /* Small screens (< 768px) */
-  @media (max-width: 400px) {
+  @media (min-width: 12px) and (max-width: 490px) {
     .main-text {
       top: 20%;          /* raise text a bit more on mobile */
-      font-size: 4rem;   /* smaller to avoid clipping */
+      font-size: 2.65rem;   /* smaller to avoid clipping */
       max-width: 90%;    /* ensures no right-side clipping */
-      left: 50.75%;
-      right: 50.75%;
+      left: 47.75%;
+      
       
       transform: translate(-50%, -50%);
     }

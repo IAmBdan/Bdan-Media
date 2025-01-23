@@ -175,7 +175,7 @@
       top: 20%;          /* raise text a bit more on mobile */
       font-size: 2.65rem;   /* smaller to avoid clipping */
       max-width: 90%;    /* ensures no right-side clipping */
-      left: 47.75%;
+      left: 50.75%;
       
       
       transform: translate(-50%, -50%);

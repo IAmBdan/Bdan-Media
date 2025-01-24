@@ -67,7 +67,7 @@ const Connect: React.FC = () => {
               />
             </a>
             <a
-              href="mailto:contact@bdan.photos"
+              href="mailto:contact@bdanmedia.com"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:scale-110 transition-transform"

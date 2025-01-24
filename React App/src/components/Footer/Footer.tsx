@@ -84,7 +84,7 @@ const Footer = () => {
           />
         </a>
         <a
-          href="mailto:contact@bdan.photos"
+          href="mailto:contact@bdanmedia.com"
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -1,6 +1,8 @@
 
 
-# Bdan.Photos Website
+# Bdan Media Website
+
+#BdanMedia.com
 
 ## Project Overview
 This is a fully functional portfolio website designed for showcasing photography and videography work. It includes various features such as section-based navigation, responsive design, media uploads, and a contact form. The project utilizes both frontend and backend technologies, integrated with AWS services for media hosting.

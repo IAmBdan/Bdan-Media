@@ -27,7 +27,7 @@ const HomePage: React.FC = () => {
   const handleIntroEnd = () => {
     setShowIntro(false);
     document.body.removeAttribute("data-intro");
-    localStorage.setItem("introPlayed", "true");
+    //localStorage.setItem("introPlayed", "true");
   };
 
   const handleVideoTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {

@@ -13,7 +13,8 @@ const HomePage: React.FC = () => {
     if (!forcedIntro && hasPlayedIntro) {
       // Skip intro
       setShowIntro(true);
-      document.body.removeAttribute("data-intro");
+      document.body.setAttribute("data-intro", "true");
+      //document.body.removeAttribute("data-intro");
     } else {
       // Play intro
       //   http://localhost:3000/home/?showIntro=true

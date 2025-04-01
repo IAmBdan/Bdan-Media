@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./HomePage.css";
+import { useLocation } from "react-router-dom";
 
 const HomePage: React.FC = () => {
   const [showIntro, setShowIntro] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const location = useLocation();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -22,7 +24,7 @@ const HomePage: React.FC = () => {
   //     setShowIntro(true);
   //     document.body.setAttribute("data-intro", "true");
   //   }
-   }, []);
+   }, [location]);
 
   // Called when intro is fully done
   const handleIntroEnd = () => {

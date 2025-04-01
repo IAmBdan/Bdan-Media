@@ -10,18 +10,18 @@ const HomePage: React.FC = () => {
     const forcedIntro = urlParams.get("showIntro") === "true";
     const hasPlayedIntro = localStorage.getItem("introPlayed");
 
-    if (!forcedIntro && hasPlayedIntro) {
-      // Skip intro
-      setShowIntro(true);
-      document.body.setAttribute("data-intro", "true");
-      //document.body.removeAttribute("data-intro");
-    } else {
-      // Play intro
-      //   http://localhost:3000/home/?showIntro=true
-      setShowIntro(true);
-      document.body.setAttribute("data-intro", "true");
-    }
-  }, []);
+  //   if (!forcedIntro && hasPlayedIntro) {
+  //     // Skip intro
+  //     setShowIntro(true);
+  //     document.body.setAttribute("data-intro", "true");
+  //     //document.body.removeAttribute("data-intro");
+  //   } else {
+  //     // Play intro
+  //     //   http://localhost:3000/home/?showIntro=true
+  //     setShowIntro(true);
+  //     document.body.setAttribute("data-intro", "true");
+  //   }
+   }, []);
 
   // Called when intro is fully done
   const handleIntroEnd = () => {

@@ -9,7 +9,8 @@ const HomePage: React.FC = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const forcedIntro = urlParams.get("showIntro") === "true";
     const hasPlayedIntro = localStorage.getItem("introPlayed");
-
+    setShowIntro(true);
+    document.body.setAttribute("data-intro", "true");
   //   if (!forcedIntro && hasPlayedIntro) {
   //     // Skip intro
   //     setShowIntro(true);

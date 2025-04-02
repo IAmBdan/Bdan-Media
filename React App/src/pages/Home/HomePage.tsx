@@ -24,7 +24,7 @@ const HomePage: React.FC = () => {
   //     setShowIntro(true);
   //     document.body.setAttribute("data-intro", "true");
   //   }
-   }, [location]);
+   }, [location.key]);
 
   // Called when intro is fully done
   const handleIntroEnd = () => {

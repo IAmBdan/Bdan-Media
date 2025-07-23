@@ -160,6 +160,9 @@ const SectionLandingPage: React.FC = () => {
     } else if (lower.endsWith("/recaps")) {
       fallback = originalPath.replace(/\/recaps$/i, "/photos");
     }
+    else if (lower.endsWith("/multicams")) {
+      fallback = originalPath.replace(/\/multicams$/i, "/photos");
+    }
     return fallback;
   };
 

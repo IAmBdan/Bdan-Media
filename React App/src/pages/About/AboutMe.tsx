@@ -59,13 +59,13 @@ const AboutMe: React.FC = () => {
           <p className="text-base md:text-lg leading-relaxed mb-4">
             My journey started when I was studying abroad. I began taking
             photos with a drone and my phone, and with the support of my
-            friends, I honed my skills. Since returning, I’ve taken every
-            opportunity to grow. Sleepless nights, travel, and determination
+            friends, Since returning, I’ve taken every
+            opportunity to grow and become the best I can be.  Sleepless nights, travel, and determination
             have shaped me into who I am today.
           </p>
           <p className="text-base md:text-lg leading-relaxed">
             I thrive on the thrill of meeting new people, exploring new places,
-            and saying yes to every opportunity. This mindset drives my
+            and saying yes to every opportunity I can. This mindset drives my
             success, and I love every moment of it.
           </p>
         </motion.div>

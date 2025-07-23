@@ -1,4 +1,5 @@
 import React from "react";
+import LazyMedia from "./LazyMedia";
 
 interface MediaItem {
   id: string;
@@ -102,27 +103,16 @@ const TiledLayout: React.FC<TiledLayoutProps> = ({
                 }}
                 onClick={() => isEditMode && toggleSelection(item.id)}
               >
-                {item.type === "image" ? (
-                  <img
-                    src={`https://${process.env.REACT_APP_S3_BUCKET}/${item.s3_key}`}
-                    alt={item.tags?.join(", ") || "media"}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                ) : (
-                  <video
-                    src={`https://${process.env.REACT_APP_S3_BUCKET}/${item.s3_key}`}
-                    controls
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                )}
+                  <LazyMedia
+                  src={`https://${process.env.REACT_APP_S3_BUCKET}/${item.s3_key}`}
+                  alt={item.tags?.join(", ") || "media"}
+                  type={item.type} // Pass the type from your MediaItem
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
               </div>
             );
           })}

@@ -31,7 +31,7 @@ const Connect: React.FC = () => {
           <h2 className="text-xl md:text-2xl font-semibold mb-6">Find Me Online</h2>
           <div className="flex justify-center gap-6">
             <a
-              href="https://www.instagram.com/bdan.photos"
+              href="https://www.instagram.com/BdanMedia"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:scale-110 transition-transform"
@@ -43,7 +43,7 @@ const Connect: React.FC = () => {
               />
             </a>
             <a
-              href="https://www.tiktok.com/@bdan.photos"
+              href="https://www.tiktok.com/@bdanmedia"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:scale-110 transition-transform"

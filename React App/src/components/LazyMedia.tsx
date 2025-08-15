@@ -25,6 +25,7 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const mediaRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -81,7 +82,21 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
+    
+    // Try to force first frame display on mobile
+    if (type === 'video' && videoRef.current) {
+      videoRef.current.currentTime = 0.01; // Seek to first frame
+    }
+    
     if (onLoad) onLoad();
+  };
+
+  const handleVideoMetadataLoaded = () => {
+    // When metadata loads, try to show first frame
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0.01;
+    }
+    handleMediaLoad();
   };
 
   const handleMediaError = () => {
@@ -156,10 +171,12 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
             />
           ) : (
             <video
+              ref={videoRef}
               src={mediaSrc}
               controls
               preload="metadata"
               playsInline
+              muted // Helps with autoplay policies and thumbnail loading
               style={{
                 width: '100%',
                 height: '100%',
@@ -167,8 +184,8 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
                 opacity: isLoaded ? 1 : 0,
                 transition: 'opacity 0.3s ease-in-out'
               }}
-              onLoadedData={handleMediaLoad}
-              onCanPlay={handleMediaLoad} // Backup event for mobile
+              onLoadedMetadata={handleVideoMetadataLoaded}
+              onCanPlay={handleMediaLoad}
               onError={handleMediaError}
             />
           )}

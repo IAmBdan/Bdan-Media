@@ -25,6 +25,7 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const mediaRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     let observer: IntersectionObserver;
@@ -56,14 +57,39 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
     };
   }, [src, isInView]);
 
+  // Mobile video fallback - ONLY for videos
+  useEffect(() => {
+    if (mediaSrc && type === 'video' && !isLoaded) {
+      // Set a fallback timeout for mobile where video events might not fire
+      timeoutRef.current = setTimeout(() => {
+        if (!isLoaded) {
+          console.log('Video timeout fallback triggered');
+          setIsLoaded(true);
+        }
+      }, 4000);
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [mediaSrc, type, isLoaded]);
+
   const handleMediaLoad = () => {
     setIsLoaded(true);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
     if (onLoad) onLoad();
   };
 
   const handleMediaError = () => {
     console.error(`Failed to load ${type}:`, mediaSrc);
-    setIsLoaded(true); // Show placeholder instead of infinite loading
+    setIsLoaded(true);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
   };
 
   return (
@@ -132,7 +158,8 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
             <video
               src={mediaSrc}
               controls
-              preload="metadata" // Only load metadata initially, not the full video
+              preload="metadata"
+              playsInline
               style={{
                 width: '100%',
                 height: '100%',
@@ -140,7 +167,8 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
                 opacity: isLoaded ? 1 : 0,
                 transition: 'opacity 0.3s ease-in-out'
               }}
-              onLoadedData={handleMediaLoad} // For videos, use loadeddata event
+              onLoadedData={handleMediaLoad}
+              onCanPlay={handleMediaLoad} // Backup event for mobile
               onError={handleMediaError}
             />
           )}

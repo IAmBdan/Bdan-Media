@@ -24,26 +24,9 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
   const [mediaSrc, setMediaSrc] = useState<string>('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const mediaRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent;
-      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-      const isTouchDevice = 'ontouchstart' in window;
-      const isSmallScreen = window.innerWidth <= 768;
-      
-      setIsMobile(isMobileUA || (isTouchDevice && isSmallScreen));
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     let observer: IntersectionObserver;
@@ -103,15 +86,18 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
   };
 
   const handleVideoMetadataLoaded = () => {
+    // Seek to first frame to show thumbnail
+    if (type === 'video' && videoRef.current) {
+      videoRef.current.currentTime = 0.01;
+    }
     handleMediaLoad();
   };
 
-  const handleVideoCanPlay = () => {
-    // Only on mobile, try to show first frame
-    if (isMobile && videoRef.current && videoRef.current.currentTime === 0) {
-      videoRef.current.currentTime = 0.1;
+  const handleVideoPlay = () => {
+    // Unmute when user starts playing
+    if (videoRef.current) {
+      videoRef.current.muted = false;
     }
-    handleMediaLoad();
   };
 
   const handleMediaError = () => {
@@ -199,7 +185,7 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
                 transition: 'opacity 0.3s ease-in-out'
               }}
               onLoadedMetadata={handleVideoMetadataLoaded}
-              onCanPlay={handleVideoCanPlay}
+              onCanPlay={handleMediaLoad}
               onError={handleMediaError}
             />
           )}

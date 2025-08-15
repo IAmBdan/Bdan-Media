@@ -82,20 +82,10 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
-    // Try to force first frame display on mobile
-    if (type === 'video' && videoRef.current) {
-      videoRef.current.currentTime = 0.01; // Seek to first frame
-    }
-    
     if (onLoad) onLoad();
   };
 
   const handleVideoMetadataLoaded = () => {
-    // When metadata loads, try to show first frame
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0.01;
-    }
     handleMediaLoad();
   };
 
@@ -176,7 +166,6 @@ const LazyMedia: React.FC<LazyMediaProps> = ({
               controls
               preload="metadata"
               playsInline
-              muted // Helps with autoplay policies and thumbnail loading
               style={{
                 width: '100%',
                 height: '100%',

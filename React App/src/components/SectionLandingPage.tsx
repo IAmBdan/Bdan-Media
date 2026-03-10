@@ -33,6 +33,38 @@ const css = `
 
   .divider { width: 32px; height: 2px; background: #4db0f2; margin: 12px 0 0; }
 
+  .sibling-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid #181818;
+    border-radius: 3px;
+    color: #6a6a6a;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 14px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sibling-btn:hover {
+    border-color: #4db0f2;
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .sibling-btn { max-width: 110px; font-size: 0.55rem; padding: 8px 10px; }
+  }
+
   .tile-label {
     font-family: 'Azonix', sans-serif;
     font-size: 1.8rem;
@@ -60,6 +92,7 @@ const SectionLandingPage: React.FC = () => {
   const [parentSection, setParentSection]       = useState<Section | null>(null);
   const [childSections, setChildSections]       = useState<Section[]>([]);
   const [subsectionImages, setSubsectionImages] = useState<Record<string, MediaItem | null>>({});
+  const [topLevelSections, setTopLevelSections] = useState<Section[]>([]);
   const [hoveredId, setHoveredId]               = useState<string | null>(null);
   const [loadingSections, setLoadingSections]   = useState(false);
   const [loadingMedia, setLoadingMedia]         = useState(false);
@@ -85,10 +118,14 @@ const SectionLandingPage: React.FC = () => {
       setParentSection(pSection);
 
       const allRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/sections`);
-      const children = (allRes.data || []).filter(
-        (s: Section) => s.parent_id === pSection.id && !s.hidden
-      );
+      const all: Section[] = allRes.data || [];
+
+      const children = all.filter((s: Section) => s.parent_id === pSection.id && !s.hidden);
       setChildSections(children);
+
+      // top-level sections for prev/next
+      const topLevel = all.filter((s: Section) => !s.parent_id && !s.hidden);
+      setTopLevelSections(topLevel);
     } catch (err) {
       console.error("Error fetching sections:", err);
       setError("Could not load sections.");
@@ -146,6 +183,10 @@ const SectionLandingPage: React.FC = () => {
   const gridCols  = n === 3 ? 3 : 2;
   const gridAspect = n === 3 ? '2/3' : '16/9';
 
+  const topLevelIndex = topLevelSections.findIndex((s) => s.id === parentSection?.id);
+  const prevSection   = topLevelIndex > 0 ? topLevelSections[topLevelIndex - 1] : null;
+  const nextSection   = topLevelIndex < topLevelSections.length - 1 ? topLevelSections[topLevelIndex + 1] : null;
+
   if (loadingSections || loadingMedia) {
     return (
       <div style={{ backgroundColor: '#080808', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -187,19 +228,56 @@ const SectionLandingPage: React.FC = () => {
       >
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
-          {/* Back */}
-          <motion.button
-            onClick={() => navigate('/work')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', color: '#a6d7f8', fontFamily: 'Montserrat', fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer', padding: 0, marginBottom: '40px' }}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Back
-          </motion.button>
+          {/* Back + prev/next */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px' }}>
+            <motion.button
+              onClick={() => navigate('/work')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', color: '#a6d7f8', fontFamily: 'Montserrat', fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer', padding: 0 }}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Back
+            </motion.button>
+
+            {topLevelSections.length > 1 && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {prevSection ? (
+                  <Link to={sectionUrl(prevSection.path)} className="sibling-btn">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    {prevSection.name}
+                  </Link>
+                ) : (
+                  <span className="sibling-btn" style={{ opacity: 0.2, cursor: 'not-allowed' }}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Prev
+                  </span>
+                )}
+                {nextSection ? (
+                  <Link to={sectionUrl(nextSection.path)} className="sibling-btn">
+                    {nextSection.name}
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </Link>
+                ) : (
+                  <span className="sibling-btn" style={{ opacity: 0.2, cursor: 'not-allowed' }}>
+                    Next
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Header */}
           <motion.div

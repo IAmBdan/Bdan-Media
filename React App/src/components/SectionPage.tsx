@@ -67,13 +67,58 @@ const css = `
     text-transform: uppercase;
     cursor: pointer;
     padding: 0;
-    margin-bottom: 40px;
     transition: color 0.2s ease;
   }
 
   .back-btn:hover { color: #fff; }
   .back-btn:hover svg { transform: translateX(-3px); }
   .back-btn svg { transition: transform 0.2s ease; }
+
+  .sibling-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid #181818;
+    border-radius: 3px;
+    color: #6a6a6a;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 14px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sibling-btn:hover {
+    border-color: #4db0f2;
+    color: #fff;
+  }
+
+  .sibling-btn:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    gap: 12px;
+  }
+
+  @media (max-width: 768px) {
+    .sibling-btn { max-width: 110px; font-size: 0.55rem; padding: 8px 10px; }
+  }
 `;
 
 const SectionPage: React.FC = () => {
@@ -82,11 +127,12 @@ const SectionPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [section, setSection]             = useState<Section | null>(null);
-  const [media, setMedia]                 = useState<MediaItem[]>([]);
-  const [selectedMedia, setSelectedMedia] = useState<Set<string>>(new Set());
-  const [isEditMode, setIsEditMode]       = useState(false);
+  const [section, setSection]               = useState<Section | null>(null);
+  const [media, setMedia]                   = useState<MediaItem[]>([]);
+  const [selectedMedia, setSelectedMedia]   = useState<Set<string>>(new Set());
+  const [isEditMode, setIsEditMode]         = useState(false);
   const [bottomSections, setBottomSections] = useState<Section[]>([]);
+  const [siblings, setSiblings]             = useState<Section[]>([]);
 
   const parentPath = path?.includes('/') ? path.split('/').slice(0, -1).join('/') : null;
 
@@ -114,15 +160,37 @@ const SectionPage: React.FC = () => {
   const fetchBottomSections = async () => {
     try {
       const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/sections`);
-      const filtered = (res.data as Section[]).filter((s) => !s.parent_id && !s.hidden);
+      const all = res.data as Section[];
+      const filtered = all.filter((s) => !s.parent_id && !s.hidden);
       setBottomSections(filtered);
     } catch (err) {
       console.error('Error fetching bottom sections:', err);
     }
   };
 
+  // Fetch siblings — all sections under the same parent including current
+  const fetchSiblings = useCallback(async () => {
+    if (!section) return;
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/sections`);
+      const all = res.data as Section[];
+      const sibs = all.filter(
+        (s) => s.parent_id === section.parent_id && !s.hidden
+      );
+      setSiblings(sibs);
+    } catch (err) {
+      console.error('Error fetching siblings:', err);
+    }
+  }, [section]);
+
   useEffect(() => { if (path) fetchSectionByPath(); }, [path, fetchSectionByPath]);
   useEffect(() => { fetchBottomSections(); }, []);
+  useEffect(() => { if (section) fetchSiblings(); }, [section, fetchSiblings]);
+
+  // Find prev/next sibling based on current section's position
+  const siblingIndex = siblings.findIndex((s) => s.id === section?.id);
+  const prevSibling  = siblingIndex > 0 ? siblings[siblingIndex - 1] : null;
+  const nextSibling  = siblingIndex < siblings.length - 1 ? siblings[siblingIndex + 1] : null;
 
   return (
     <>
@@ -135,13 +203,50 @@ const SectionPage: React.FC = () => {
       >
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
-          {/* Back */}
-          <button className="back-btn" onClick={() => navigate(parentPath ? sectionUrl(parentPath) : '/work')}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Back
-          </button>
+          {/* Top nav: back + sibling arrows */}
+          <div className="top-nav">
+            <button className="back-btn" onClick={() => navigate(parentPath ? sectionUrl(parentPath) : '/work')}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Back
+            </button>
+
+            {siblings.length > 0 && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {prevSibling ? (
+                  <Link to={sectionUrl(prevSibling.path)} className="sibling-btn">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    {prevSibling.name}
+                  </Link>
+                ) : (
+                  <span className="sibling-btn" style={{ opacity: 0.2, cursor: 'not-allowed' }}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Prev
+                  </span>
+                )}
+                {nextSibling ? (
+                  <Link to={sectionUrl(nextSibling.path)} className="sibling-btn">
+                    {nextSibling.name}
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </Link>
+                ) : (
+                  <span className="sibling-btn" style={{ opacity: 0.2, cursor: 'not-allowed' }}>
+                    Next
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Header */}
           <motion.div

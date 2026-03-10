@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
 
+const sectionUrl = (path: string) => `/${path}`;
+
 interface Section {
   id: string;
   name: string;
@@ -21,15 +23,15 @@ interface MediaItem {
   uploaded_at?: string;
 }
 
-const sectionUrl = (path: string) => `/${path}`;
-
 const css = `
-  .divider {
-    width: 32px;
-    height: 2px;
-    background: #4db0f2;
-    margin: 12px 0 0;
+  .slp-wrap {
+    background-color: #080808;
+    min-height: 100vh;
+    padding: 64px 48px 80px;
+    font-family: 'Montserrat', sans-serif;
   }
+
+  .divider { width: 32px; height: 2px; background: #4db0f2; margin: 12px 0 0; }
 
   .tile-label {
     font-family: 'Azonix', sans-serif;
@@ -38,18 +40,37 @@ const css = `
     letter-spacing: 0.06em;
     text-shadow: 0 2px 16px rgba(0,0,0,0.8);
   }
+
+  .tile-grid {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    .slp-wrap { padding: 60px 16px 60px !important; }
+    .tile-label { font-size: 1.1rem !important; }
+  }
 `;
 
 const SectionLandingPage: React.FC = () => {
   const { sectionPath } = useParams();
   const navigate = useNavigate();
-  const [parentSection, setParentSection]     = useState<Section | null>(null);
-  const [childSections, setChildSections]     = useState<Section[]>([]);
+
+  const [parentSection, setParentSection]       = useState<Section | null>(null);
+  const [childSections, setChildSections]       = useState<Section[]>([]);
   const [subsectionImages, setSubsectionImages] = useState<Record<string, MediaItem | null>>({});
-  const [hoveredId, setHoveredId]             = useState<string | null>(null);
-  const [loadingSections, setLoadingSections] = useState(false);
-  const [loadingMedia, setLoadingMedia]       = useState(false);
-  const [error, setError]                     = useState("");
+  const [hoveredId, setHoveredId]               = useState<string | null>(null);
+  const [loadingSections, setLoadingSections]   = useState(false);
+  const [loadingMedia, setLoadingMedia]         = useState(false);
+  const [error, setError]                       = useState("");
+  const [isMobile, setIsMobile]                 = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handle = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handle);
+    return () => window.removeEventListener('resize', handle);
+  }, []);
 
   const fetchSections = async () => {
     if (!sectionPath) return;
@@ -64,7 +85,9 @@ const SectionLandingPage: React.FC = () => {
       setParentSection(pSection);
 
       const allRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/sections`);
-      const children = (allRes.data || []).filter((s: Section) => s.parent_id === pSection.id && !s.hidden);
+      const children = (allRes.data || []).filter(
+        (s: Section) => s.parent_id === pSection.id && !s.hidden
+      );
       setChildSections(children);
     } catch (err) {
       console.error("Error fetching sections:", err);
@@ -119,12 +142,10 @@ const SectionLandingPage: React.FC = () => {
   useEffect(() => { fetchSections(); }, [sectionPath]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (childSections.length > 0) fetchImagesForSubsections(childSections); }, [childSections]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── layout ────────────────────────────────────────────────────────────────
   const n = childSections.length;
   const gridCols  = n === 3 ? 3 : 2;
-  const aspectRatio = n === 3 ? '2/3' : '16/9';
+  const gridAspect = n === 3 ? '2/3' : '16/9';
 
-  // ── states ────────────────────────────────────────────────────────────────
   if (loadingSections || loadingMedia) {
     return (
       <div style={{ backgroundColor: '#080808', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -159,7 +180,7 @@ const SectionLandingPage: React.FC = () => {
     <>
       <style>{css}</style>
       <motion.div
-        style={{ backgroundColor: '#080808', minHeight: '100vh', padding: '64px 48px 80px', fontFamily: 'Montserrat, sans-serif' }}
+        className="slp-wrap"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -173,7 +194,6 @@ const SectionLandingPage: React.FC = () => {
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.2 }}
-            whileHover={{ color: '#fff' }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -198,13 +218,16 @@ const SectionLandingPage: React.FC = () => {
           </motion.div>
 
           {/* Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: '6px', width: '100%' }}>
+          <div
+            className="tile-grid"
+            style={{ gridTemplateColumns: isMobile ? '1fr' : `repeat(${gridCols}, 1fr)` }}
+          >
             {childSections.map((child, idx) => {
               const image = subsectionImages[child.id];
               return (
                 <motion.div
                   key={child.id}
-                  style={{ position: 'relative', overflow: 'hidden', borderRadius: '3px', aspectRatio, zIndex: hoveredId === child.id ? 10 : 1 }}
+                  style={{ position: 'relative', overflow: 'hidden', borderRadius: '3px', aspectRatio: gridAspect, zIndex: hoveredId === child.id ? 10 : 1 }}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: idx * 0.06 }}
@@ -213,9 +236,7 @@ const SectionLandingPage: React.FC = () => {
                   onHoverStart={() => setHoveredId(child.id)}
                   onHoverEnd={() => setHoveredId(null)}
                 >
-                                      <Link to={sectionUrl(child.path)} style={{ display: 'block', width: '100%', height: '100%' }}>
-
-                    {/* Image */}
+                  <Link to={sectionUrl(child.path)} style={{ display: 'block', width: '100%', height: '100%' }}>
                     {image ? (
                       <motion.img
                         src={`https://${process.env.REACT_APP_S3_BUCKET}/${image.s3_key}`}
@@ -230,7 +251,6 @@ const SectionLandingPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Bottom gradient */}
                     <motion.div
                       style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%', background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%)', zIndex: 10, pointerEvents: 'none' }}
                       initial={{ opacity: 0 }}
@@ -238,7 +258,6 @@ const SectionLandingPage: React.FC = () => {
                       transition={{ duration: 0.4, delay: 0.2 + idx * 0.06 }}
                     />
 
-                    {/* Label */}
                     <motion.div
                       className="tile-label"
                       style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '16px 20px', textAlign: 'left' }}
@@ -249,7 +268,6 @@ const SectionLandingPage: React.FC = () => {
                       {child.name.toUpperCase()}
                     </motion.div>
 
-                    {/* Blue accent line on hover */}
                     <motion.div
                       style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: '#4db0f2', zIndex: 30, scaleX: 0, originX: 0 }}
                       whileHover={{ scaleX: 1 }}

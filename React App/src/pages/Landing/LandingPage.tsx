@@ -42,21 +42,24 @@ const css = `
   }
 
   .card {
-    padding: 36px 20px;
+    padding: 28px 12px;
     border: 1px solid #181818;
     border-radius: 3px;
     background: #0d0d0d;
     color: #6a6a6a;
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
-    font-size: 0.85rem;
-    letter-spacing: 0.18em;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     cursor: pointer;
     text-align: center;
     transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
     user-select: none;
     will-change: transform;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .card:hover {
@@ -119,6 +122,17 @@ const css = `
     color: #fff;
     letter-spacing: 0.12em;
     text-shadow: 0 2px 16px rgba(0,0,0,0.8);
+  }
+
+  .page-wrap {
+    min-height: 100vh;
+    background-color: #080808;
+    padding: 80px 48px 80px;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  @media (max-width: 600px) {
+    .page-wrap { padding: 60px 16px 60px; }
   }
 `;
 
@@ -184,6 +198,13 @@ const LandingPage: React.FC = () => {
   const [animKey, setAnimKey]           = useState(0);
   const [hoveredId, setHoveredId]       = useState<string | null>(null);
   const [hoveredTileId, setHoveredTileId] = useState<string | null>(null);
+  const [isMobile, setIsMobile]         = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handle = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handle);
+    return () => window.removeEventListener('resize', handle);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -233,7 +254,7 @@ const LandingPage: React.FC = () => {
   return (
     <>
       <style>{css}</style>
-      <div style={{ minHeight: '100vh', backgroundColor: '#080808', padding: '80px 48px', fontFamily: 'Montserrat, sans-serif' }}>
+      <div className="page-wrap">
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
           {/* Back */}
@@ -257,7 +278,7 @@ const LandingPage: React.FC = () => {
             key={`hdr-${animKey}`}
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            style={{ marginBottom: '52px' }}
+            style={{ marginBottom: '40px' }}
           >
             <p className="eyebrow">{active ? 'Select a category' : 'Select a section'}</p>
             <h1 className="heading">{active ? active.name : 'Work'}</h1>
@@ -274,11 +295,14 @@ const LandingPage: React.FC = () => {
                 transition={{ duration: 0.2 }}
                 style={{ display: 'flex', flexWrap: 'wrap', gap: `${gap}px`, justifyContent: 'center', overflow: 'visible' }}
               >
-                {topLevel.map((s, i) => (
+                {topLevel.map((s, i) => {
+                  const isMobile = typeof window !== 'undefined' && window.innerWidth < 600;
+                  const mobileWidth = `calc(50% - ${gap / 2}px)`;
+                  return (
                   <motion.div
                     key={s.id}
                     className="card"
-                    style={{ width: cardWidth, position: 'relative', zIndex: hoveredId === s.id ? 10 : 1 }}
+                    style={{ width: isMobile ? mobileWidth : cardWidth, position: 'relative', zIndex: hoveredId === s.id ? 10 : 1 }}
                     initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: i * 0.04 }}
@@ -290,7 +314,8 @@ const LandingPage: React.FC = () => {
                   >
                     {s.name}
                   </motion.div>
-                ))}
+                  );
+                })}
               </motion.div>
             )}
 
@@ -300,7 +325,7 @@ const LandingPage: React.FC = () => {
                 key={`tiles-${active.id}`}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                style={{ display: 'grid', gridTemplateColumns: `repeat(${tileCo}, 1fr)`, gap: '6px', width: '100%' }}
+                style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${tileCo}, 1fr)`, gap: '6px', width: '100%' }}
               >
                 {children.map((child, i) => {
                   const img = images[child.id];

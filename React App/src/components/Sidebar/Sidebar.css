@@ -74,12 +74,14 @@
 }
 
 @media (max-width: 480px) {
-  .sidebar { width: 70%; }
-  .nav-links li a { font-size: 0.68rem; }
+  .sidebar { width: 50%; }
+  .nav-links li { width: auto; }
+  .nav-links li a { font-size: 0.85rem; }
 }
 
 @media (min-width: 481px) and (max-width: 768px) {
-  .sidebar { width: 50%; }
+  .sidebar { width: 40%; }
+  .nav-links li { width: auto; }
 }
 
 @media (min-width: 769px) {

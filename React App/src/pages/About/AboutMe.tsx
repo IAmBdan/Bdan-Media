@@ -22,6 +22,52 @@ const css = `
   .about-body p:last-child {
     margin-bottom: 0;
   }
+
+  .about-wrap {
+    background-color: #080808;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 64px 48px 80px;
+  }
+
+  .about-card {
+    background-color: #0d0d0d;
+    border: 1px solid #181818;
+    border-radius: 4px;
+    padding: 48px;
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: row;
+    gap: 48px;
+    align-items: flex-start;
+  }
+
+  .about-photo {
+    flex-shrink: 0;
+    width: 280px;
+    height: 360px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1px solid #181818;
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .about-wrap { padding: 60px 16px 60px; }
+    .about-card {
+      flex-direction: column;
+      padding: 24px;
+      gap: 24px;
+    }
+    .about-photo {
+      width: 100%;
+      height: 260px;
+    }
+  }
 `;
 
 const AboutMe: React.FC = () => {
@@ -29,7 +75,7 @@ const AboutMe: React.FC = () => {
     <>
       <style>{css}</style>
       <motion.div
-        style={{ backgroundColor: '#080808', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '64px', paddingBottom: '80px', paddingLeft: '24px', paddingRight: '24px' }}
+        className="about-wrap"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -52,7 +98,7 @@ const AboutMe: React.FC = () => {
 
         {/* Card */}
         <motion.div
-          style={{ backgroundColor: '#0d0d0d', border: '1px solid #181818', borderRadius: '4px', padding: '48px', width: '100%', maxWidth: '900px', display: 'flex', flexDirection: 'row', gap: '48px', alignItems: 'flex-start' }}
+          className="about-card"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
@@ -67,7 +113,7 @@ const AboutMe: React.FC = () => {
             <img
               src={brianpicture}
               alt="Portrait of Brian Daniels"
-              style={{ width: '280px', height: '360px', objectFit: 'cover', borderRadius: '3px', border: '1px solid #181818', display: 'block' }}
+              className="about-photo"
             />
           </motion.div>
 
@@ -90,7 +136,7 @@ const AboutMe: React.FC = () => {
               for some of the biggest names in the industry — Fred Again, Fisher, DJ Diesel,
               Cloonee, and many more. From intimate club sets to massive festival mainstages,
               I've built a reputation for delivering cinematic, high-quality content under
-              pressure. My multicam production work brings a unqiue look to live
+              pressure. My multicam production work brings a unique look to live
               performances, giving artists content that stands out and resonates with fans.
             </p>
             <p>

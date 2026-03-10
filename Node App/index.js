@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const mediaRoutes = require('./src/routes/mediaRoutes');
 const cors = require('cors');
 const userRoutes = require('./src/routes/userRoutes');
@@ -8,11 +9,21 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10,                   // 10 attempts per window
+    message: { error: 'Too many login attempts, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(cors());
 
-// Routes
+// ── Routes ────────────────────────────────────────────────────────────────────
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/media', mediaRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -27,9 +38,7 @@ app.use((req, res, next) => {
     res.status(404).send('Not Found');
 });
 
-
-
-// Starts the server
+// ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);

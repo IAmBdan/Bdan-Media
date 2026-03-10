@@ -122,8 +122,10 @@ const css = `
 `;
 
 const SectionPage: React.FC = () => {
-  const { '*': rawPath } = useParams();
-  const path = rawPath?.replace(/^work\//, '');
+  const { '*': rawPath, sectionPath } = useParams();
+  const path = rawPath
+    ? `${sectionPath}/${rawPath}`.replace(/^work\//, '')
+    : rawPath?.replace(/^work\//, '') || sectionPath;
   const { user } = useAuth();
   const navigate = useNavigate();
 

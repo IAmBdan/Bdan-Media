@@ -41,7 +41,7 @@ const App: React.FC = () => {
 
             {/* ── Short routes e.g. .com/music ── */}
             <Route path="/:sectionPath" element={<SectionLandingPage />} />
-            <Route path="/*"            element={<SectionPage />} />
+            <Route path="/:sectionPath/*" element={<SectionPage />} />
           </Routes>
         </div>
         <Footer />

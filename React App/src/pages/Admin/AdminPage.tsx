@@ -365,7 +365,11 @@ const AdminPage: React.FC = () => {
               )}
               <button className="btn" onClick={() => { setEditingId(section.id); setEditName(section.name); setEditPath(section.path); }}>Edit</button>
               {!isChild && (
-                <button className="btn" onClick={() => { setAddingUnder(section.id); setNewName(''); setNewPath(''); }}>+ Sub</button>
+                <button className="btn" onClick={() => {
+                  setAddingUnder(section.id);
+                  setNewName('');
+                  setNewPath(`${section.path}/`);
+                }}>+ Sub</button>
               )}
               <button
                 className="btn"

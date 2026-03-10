@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 const sectionUrl = (path: string) => `/${path}`;
 
 // ── PALETTE ───────────────────────────────────────────────────────────────────
-// bg:           #080808   near-black
-// card:         #0d0d0d   card surface
-// border:       #181818   default border
-// borderHov:    #4db0f2   accent blue
-// textDim:      #6a6a6a   muted label
-// textHov:      #ffffff   active/hover text
+// bg:           #080808
+// card:         #0d0d0d
+// border:       #181818
+// borderHov:    #4db0f2
+// textDim:      #6a6a6a
+// textHov:      #ffffff
 // accent:       #4db0f2
 // accentLight:  #a6d7f8
 
@@ -41,6 +41,13 @@ const css = `
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  .page-wrap {
+    min-height: 100vh;
+    background-color: #080808;
+    padding: 80px 48px 80px;
+    font-family: 'Montserrat', sans-serif;
+  }
+
   .card {
     padding: 28px 12px;
     border: 1px solid #181818;
@@ -54,7 +61,7 @@ const css = `
     text-transform: uppercase;
     cursor: pointer;
     text-align: center;
-    transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+    transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
     user-select: none;
     will-change: transform;
     overflow: hidden;
@@ -82,13 +89,40 @@ const css = `
     text-transform: uppercase;
     cursor: pointer;
     padding: 0;
-    margin-bottom: 40px;
     transition: color 0.2s ease;
   }
 
   .back-btn:hover { color: #fff; }
   .back-btn:hover svg { transform: translateX(-3px); }
   .back-btn svg { transition: transform 0.2s ease; }
+
+  .sibling-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid #181818;
+    border-radius: 3px;
+    color: #6a6a6a;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 14px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sibling-btn:hover {
+    border-color: #4db0f2;
+    color: #fff;
+  }
 
   .eyebrow {
     font-family: 'Montserrat', sans-serif;
@@ -124,19 +158,15 @@ const css = `
     text-shadow: 0 2px 16px rgba(0,0,0,0.8);
   }
 
-  .page-wrap {
-    min-height: 100vh;
-    background-color: #080808;
-    padding: 80px 48px 80px;
-    font-family: 'Montserrat', sans-serif;
-  }
-
-  @media (max-width: 600px) {
-    .page-wrap { padding: 60px 16px 60px; }
+  @media (max-width: 768px) {
+    .page-wrap { padding: 60px 16px 60px !important; }
+    .heading { font-size: 1.6rem !important; }
+    .tile-label { font-size: 0.85rem !important; }
+    .sibling-btn { max-width: 110px; font-size: 0.55rem; padding: 8px 10px; }
   }
 `;
 
-// ── layout: best column count with no orphan ──────────────────────────────────
+// ── layout helpers ────────────────────────────────────────────────────────────
 const getColCount = (n: number): number => {
   if (n <= 3) return n;
   if (n === 4) return 2;
@@ -183,7 +213,6 @@ const prefetchChildren = async (children: Section[]): Promise<Record<string, Med
 };
 
 const tileCols = (n: number) => {
-  if (n === 2) return { cols: 2 };
   if (n === 3) return { cols: 3 };
   return { cols: 2 };
 };
@@ -247,6 +276,10 @@ const LandingPage: React.FC = () => {
   const imagesReady = active ? !!prefetched[active.id] : false;
   const { cols: tileCo } = tileCols(children.length);
 
+  const topLevelIndex = active ? topLevel.findIndex((s) => s.id === active.id) : -1;
+  const prevSection   = topLevelIndex > 0 ? topLevel[topLevelIndex - 1] : null;
+  const nextSection   = topLevelIndex < topLevel.length - 1 ? topLevel[topLevelIndex + 1] : null;
+
   const colCount  = getColCount(topLevel.length);
   const gap       = 10;
   const cardWidth = `calc((100% - ${(colCount - 1) * gap}px) / ${colCount})`;
@@ -257,19 +290,54 @@ const LandingPage: React.FC = () => {
       <div className="page-wrap">
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
-          {/* Back */}
+          {/* Back + prev/next */}
           <AnimatePresence>
             {active && (
-              <motion.button
-                className="back-btn" onClick={goBack}
-                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.2 }}
+              <motion.div
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px' }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Back
-              </motion.button>
+                <button className="back-btn" onClick={goBack}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Back
+                </button>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {prevSection ? (
+                    <button className="sibling-btn" onClick={() => { setActive(prevSection); setAnimKey((k) => k + 1); }}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      {prevSection.name}
+                    </button>
+                  ) : (
+                    <span className="sibling-btn" style={{ opacity: 0.2, cursor: 'not-allowed' }}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Prev
+                    </span>
+                  )}
+                  {nextSection ? (
+                    <button className="sibling-btn" onClick={() => { setActive(nextSection); setAnimKey((k) => k + 1); }}>
+                      {nextSection.name}
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  ) : (
+                    <span className="sibling-btn" style={{ opacity: 0.2, cursor: 'not-allowed' }}>
+                      Next
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
 
@@ -296,24 +364,24 @@ const LandingPage: React.FC = () => {
                 style={{ display: 'flex', flexWrap: 'wrap', gap: `${gap}px`, justifyContent: 'center', overflow: 'visible' }}
               >
                 {topLevel.map((s, i) => {
-                  const isMobile = typeof window !== 'undefined' && window.innerWidth < 600;
+                  const isMobileWidth = typeof window !== 'undefined' && window.innerWidth < 600;
                   const mobileWidth = `calc(50% - ${gap / 2}px)`;
                   return (
-                  <motion.div
-                    key={s.id}
-                    className="card"
-                    style={{ width: isMobile ? mobileWidth : cardWidth, position: 'relative', zIndex: hoveredId === s.id ? 10 : 1 }}
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2, delay: i * 0.04 }}
-                    whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(77,176,242,0.15), 0 10px 24px rgba(77,176,242,0.12)' }}
-                    whileTap={{ scale: 0.97 }}
-                    onHoverStart={() => setHoveredId(s.id)}
-                    onHoverEnd={() => setHoveredId(null)}
-                    onClick={() => handleClick(s)}
-                  >
-                    {s.name}
-                  </motion.div>
+                    <motion.div
+                      key={s.id}
+                      className="card"
+                      style={{ width: isMobileWidth ? mobileWidth : cardWidth, position: 'relative', zIndex: hoveredId === s.id ? 10 : 1 }}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: i * 0.04 }}
+                      whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(77,176,242,0.15), 0 10px 24px rgba(77,176,242,0.12)' }}
+                      whileTap={{ scale: 0.97 }}
+                      onHoverStart={() => setHoveredId(s.id)}
+                      onHoverEnd={() => setHoveredId(null)}
+                      onClick={() => handleClick(s)}
+                    >
+                      {s.name}
+                    </motion.div>
                   );
                 })}
               </motion.div>
@@ -327,7 +395,7 @@ const LandingPage: React.FC = () => {
                 transition={{ duration: 0.3 }}
                 style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${tileCo}, 1fr)`, gap: '6px', width: '100%' }}
               >
-                {children.map((child, i) => {
+                {children.map((child: Section, i: number) => {
                   const img = images[child.id];
                   return (
                     <motion.div

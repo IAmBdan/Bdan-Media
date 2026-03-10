@@ -42,6 +42,28 @@
 }
 
 /* =========================
+   SKIP HINT
+========================= */
+.skip-hint {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+  width: max-content;
+  opacity: 0;
+  animation: skipFadeIn 10s ease 0.5s forwards !important;
+}
+
+/* =========================
    MAIN TEXT
 ========================= */
 .main-text {
@@ -56,6 +78,8 @@
   z-index: 2;
   white-space: nowrap;
   letter-spacing: 0.04em;
+  opacity: 0;
+  animation: mainTextFadeIn 2s ease 0.5s forwards;
 }
 
 /* =========================
@@ -79,22 +103,6 @@
 .nav-buttons a {
   opacity: 0;
   transform: translateY(20px);
-}
-
-.nav-buttons.show-buttons a {
-  animation: fadeInUp 0.4s forwards;
-}
-.nav-buttons.show-buttons a:nth-child(1) { animation-delay: 0s; }
-.nav-buttons.show-buttons a:nth-child(2) { animation-delay: 0.15s; }
-.nav-buttons.show-buttons a:nth-child(3) { animation-delay: 0.3s; }
-
-@keyframes fadeInUp {
-  0%   { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-/* Button style — updated to match site palette */
-.nav-buttons a {
   background-color: #0d0d0d;
   color: #6a6a6a;
   padding: 14px 32px;
@@ -114,6 +122,38 @@
   color: #fff;
   background-color: #0f0f0f;
   box-shadow: 0 0 20px rgba(77, 176, 242, 0.15), 0 10px 24px rgba(77, 176, 242, 0.1);
+}
+
+.nav-buttons.show-buttons a {
+  animation: fadeInUp 0.4s forwards;
+}
+.nav-buttons.show-buttons a:nth-child(1) { animation-delay: 0s; }
+.nav-buttons.show-buttons a:nth-child(2) { animation-delay: 0.15s; }
+.nav-buttons.show-buttons a:nth-child(3) { animation-delay: 0.3s; }
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes skipFadeIn {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes mainTextFadeIn {
+  from { opacity: 0; transform: translate(-50%, -45%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@keyframes navFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* =========================

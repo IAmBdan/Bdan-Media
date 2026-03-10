@@ -8,6 +8,7 @@ import Connect from "./pages/Connect/ConnectPage";
 import LandingPage from "./pages/Landing/LandingPage";
 import SectionPage from "./components/SectionPage";
 import SectionLandingPage from "./components/SectionLandingPage";
+import AdminPage from "./pages/Admin/AdminPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import EditProfilePage from "./pages/Profile/EditProfile";
 import LoginPage from "./pages/Log In/LoginPage";
@@ -22,17 +23,25 @@ const App: React.FC = () => {
         <Navbar />
         <div className="app-content">
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/Home" element={<HomePage />} />
-            <Route path="/About" element={<AboutMe />} />
-            <Route path="/work" element={<LandingPage />} />
-            <Route path="/Connect" element={<Connect />} />
-            <Route path="/work/*" element={<SectionPage />} />
-            <Route path="/work/:sectionPath" element={<SectionLandingPage />} />
-            <Route path="/profile/:username" element={<ProfilePage />} />
+            {/* ── Core pages ── */}
+            <Route path="/"          element={<HomePage />} />
+            <Route path="/home"      element={<HomePage />} />
+            <Route path="/about"     element={<AboutMe />} />
+            <Route path="/connect"   element={<Connect />} />
+            <Route path="/login"     element={<LoginPage />} />
+            <Route path="/signup"    element={<SignUpPage />} />
+            <Route path="/admin"     element={<AdminPage />} />
+            <Route path="/profile/:username"      element={<ProfilePage />} />
             <Route path="/profile/:username/edit" element={<EditProfilePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignUpPage />} />
+
+            {/* ── Work routes (original — keep for existing links) ── */}
+            <Route path="/work"              element={<LandingPage />} />
+            <Route path="/work/:sectionPath" element={<SectionLandingPage />} />
+            <Route path="/work/*"            element={<SectionPage />} />
+
+            {/* ── Short routes e.g. .com/music ── */}
+            <Route path="/:sectionPath" element={<SectionLandingPage />} />
+            <Route path="/*"            element={<SectionPage />} />
           </Routes>
         </div>
         <Footer />

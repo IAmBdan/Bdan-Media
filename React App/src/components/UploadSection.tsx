@@ -1,351 +1,278 @@
 import React, { useState, ChangeEvent } from 'react';
-import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
-
 interface UploadSectionProps {
-    section: string; 
-    onUploadComplete: () => void;
-    onDelete: () => void;
-    isEditMode: boolean;
-    toggleSelectionMode: () => void;
-    clearSelection: () => void;
-    selectedMedia: Set<string>;
+  section: string;
+  onUploadComplete: () => void;
+  onDelete: () => void;
+  isEditMode: boolean;
+  toggleSelectionMode: () => void;
+  clearSelection: () => void;
+  selectedMedia: Set<string>;
 }
 
+const css = `
+  .upload-input {
+    width: 100%;
+    max-width: 320px;
+    padding: 11px 14px;
+    background: #0a0a0a;
+    color: #c0c0c0;
+    border: 1px solid #181818;
+    border-radius: 3px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .upload-input:focus {
+    border-color: #4db0f2;
+  }
+
+  .upload-input::placeholder {
+    color: #3a3a3a;
+  }
+
+  .btn {
+    padding: 11px 28px;
+    border-radius: 3px;
+    border: 1px solid #181818;
+    background: #0d0d0d;
+    color: #6a6a6a;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .btn:hover {
+    border-color: #4db0f2;
+    color: #fff;
+  }
+
+  .btn-danger {
+    border-color: #4a1a1a;
+    color: #cc4444;
+  }
+
+  .btn-danger:hover {
+    border-color: #ff4444;
+    color: #ff6666;
+  }
+
+  .btn-active {
+    border-color: #4db0f2;
+    color: #a6d7f8;
+  }
+
+  .preview-thumb {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    border: 1px solid #181818;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.8);
+    border: 1px solid #444;
+    color: #aaa;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .preview-remove:hover {
+    border-color: #ff4444;
+    color: #ff4444;
+  }
+`;
+
 const UploadSection: React.FC<UploadSectionProps> = ({
-    section,
-    onUploadComplete,
-    onDelete,
-    isEditMode,
-    toggleSelectionMode,
-    clearSelection,
-    selectedMedia,
+  section,
+  onUploadComplete,
+  onDelete,
+  isEditMode,
+  toggleSelectionMode,
+  clearSelection,
+  selectedMedia,
 }) => {
-    
-    const [files, setFiles] = useState<File[]>([]);
-    const [tags, setTags] = useState<string>('');
-    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-    const [fileNames, setFileNames] = useState<string[]>([]);
+  const [files, setFiles]           = useState<File[]>([]);
+  const [tags, setTags]             = useState('');
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
-    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const selectedFiles = Array.from(e.target.files);
-            const updatedFiles = [...files, ...selectedFiles]; // Merge existing files with new ones
-    
-            setFiles(updatedFiles);
-    
-            // Generate preview URLs for images and videos
-            const updatedPreviews = [
-                ...previewUrls,
-                ...selectedFiles.map((file) =>
-                    file.type.startsWith("image/")
-                        ? URL.createObjectURL(file) // For images
-                        : URL.createObjectURL(file) // For videos
-                ),
-            ];
-    
-            setPreviewUrls(updatedPreviews);
-            setFileNames(updatedFiles.map((file) => file.name)); // Update file names
-        }
-    };
-    
-    
-    // Remove a single file and its preview
-    const handleRemoveFile = (index: number) => {
-        // Remove the file, preview URL, and filename at the given index
-        const updatedFiles = [...files];
-        const updatedPreviews = [...previewUrls];
-        const updatedFileNames = [...fileNames];
-    
-        updatedFiles.splice(index, 1);
-        updatedPreviews.splice(index, 1);
-        updatedFileNames.splice(index, 1);
-    
-        setFiles(updatedFiles);
-        setPreviewUrls(updatedPreviews);
-        setFileNames(updatedFileNames);
-    };
-    
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const selected = Array.from(e.target.files);
+    setFiles((prev) => [...prev, ...selected]);
+    setPreviewUrls((prev) => [...prev, ...selected.map((f) => URL.createObjectURL(f))]);
+  };
 
-    const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve({ width: img.width, height: img.height });
-          img.onerror = (err) => reject(err);
-          img.src = URL.createObjectURL(file);
-        });
-      };
-    
-      const getVideoDimensions = (file: File): Promise<{ width: number; height: number }> => {
-        return new Promise((resolve, reject) => {
-          const video = document.createElement('video');
-          video.onloadedmetadata = () => resolve({ width: video.videoWidth, height: video.videoHeight });
-          video.onerror = (err) => reject(err);
-          video.src = URL.createObjectURL(file);
-        });
-      };
+  const handleRemoveFile = (i: number) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviewUrls((prev) => prev.filter((_, idx) => idx !== i));
+  };
 
-      const handleUpload = async () => {
-        if (!files.length || !section) {
-            
-          alert('Please select files and ensure the section is valid.'+section);
-          return;
-        }
-    
-        try {
-          // Calculate dimensions for all files
-          const filesWithDimensions = await Promise.all(
-            files.map(async (file) => {
-              if (file.type.startsWith('image/')) {
-                const { width, height } = await getImageDimensions(file);
-                return { file, width, height };
-              } else if (file.type.startsWith('video/')) {
-                const { width, height } = await getVideoDimensions(file);
-                return { file, width, height };
-              } else {
-                // Default dimensions for unsupported types
-                return { file, width: 0, height: 0 };
-              }
-            })
-          );
-    
-          // Request presigned URLs from the server
-          const presignedResponse = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/media/presigned-urls`, {
-            files: filesWithDimensions.map(({ file }) => ({
-              fileName: file.name,
-              fileType: file.type,
-            })),
-            sectionPath: section,
-          });
-    
-          // Upload files to S3
-          await Promise.all(
-            filesWithDimensions.map(({ file }, index) =>
-              axios.put(presignedResponse.data.urls[index].url, file, {
-                headers: { 'Content-Type': file.type },
-              })
-            )
-          );
-    
-          // Save metadata to the database
-          const metadata = filesWithDimensions.map(({ file, width, height }) => ({
-            s3_key: `${section}/${file.name}`,
-            sectionPath: section,
-            tags: tags ? tags.split(',').map((tag) => tag.trim()) : [],
-            type: file.type.startsWith('image/') ? 'image' : 'video',
-            width,
-            height,
-            uploaded_by: 1, // Replace with actual user ID
-          }));
-    
-          await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/media/metadata`, { media: metadata });
-    
-          alert('Files uploaded successfully!');
-          onUploadComplete();
-          setFiles([]);
-          setTags('');
-          setPreviewUrls([]);
-        } catch (error) {
-          console.error('Error uploading files:', error);
-          alert('Failed to upload files.');
-        }
-      };
-    
-      const handleDeleteSelectedMedia = async () => {
-        if (selectedMedia.size === 0) {
-            alert('No media selected for deletion.');
-            return;
-        }
-    
-        try {
-            const idsToDelete = Array.from(selectedMedia);
-            await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/media/delete`, {
-                ids: idsToDelete,
-            });
-    
-            alert('Selected media deleted successfully!');
-            clearSelection();
-            onUploadComplete(); // Refresh the list of media
-        } catch (error) {
-            console.error('Error deleting selected media:', error);
-            alert('Failed to delete selected media.');
-        }
-    };
-    const capitalSection: string = section ? section.charAt(0).toUpperCase() + section.slice(1) : "";
+  const getDimensions = (file: File): Promise<{ width: number; height: number }> =>
+    new Promise((resolve, reject) => {
+      if (file.type.startsWith('image/')) {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.width, height: img.height });
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      } else {
+        const vid = document.createElement('video');
+        vid.onloadedmetadata = () => resolve({ width: vid.videoWidth, height: vid.videoHeight });
+        vid.onerror = reject;
+        vid.src = URL.createObjectURL(file);
+      }
+    });
 
-    return (
-        <div
-    style={{
-        backgroundColor: '#333',
-        padding: '20px',
-        borderRadius: '8px',
-        marginBottom: '20px',
-        color: 'white',
-    }}
->
-    <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>
-        Upload to {capitalSection}
-    </h3>
+  const handleUpload = async () => {
+    if (!files.length || !section) {
+      alert('Please select files and ensure the section is valid.');
+      return;
+    }
+    try {
+      const withDims = await Promise.all(files.map(async (f) => ({ file: f, ...(await getDimensions(f)) })));
 
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
-        {/* File Selector */}
-        <label
-            style={{
-                cursor: 'pointer',
-                backgroundColor: '#555',
-                padding: '10px',
-                borderRadius: '4px',
-            }}
-        >
+      const presigned = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/media/presigned-urls`, {
+        files: withDims.map(({ file }) => ({ fileName: file.name, fileType: file.type })),
+        sectionPath: section,
+      });
+
+      await Promise.all(
+        withDims.map(({ file }, i) =>
+          axios.put(presigned.data.urls[i].url, file, { headers: { 'Content-Type': file.type } })
+        )
+      );
+
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/media/metadata`, {
+        media: withDims.map(({ file, width, height }) => ({
+          s3_key: `${section}/${file.name}`,
+          sectionPath: section,
+          tags: tags ? tags.split(',').map((t) => t.trim()) : [],
+          type: file.type.startsWith('image/') ? 'image' : 'video',
+          width,
+          height,
+          uploaded_by: 1,
+        })),
+      });
+
+      alert('Files uploaded successfully!');
+      onUploadComplete();
+      setFiles([]);
+      setTags('');
+      setPreviewUrls([]);
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert('Failed to upload files.');
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!selectedMedia.size) { alert('No media selected.'); return; }
+    try {
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/media/delete`, { ids: Array.from(selectedMedia) });
+      alert('Deleted successfully!');
+      clearSelection();
+      onUploadComplete();
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Failed to delete.');
+    }
+  };
+
+  const capitalSection = section ? section.charAt(0).toUpperCase() + section.slice(1) : '';
+
+  return (
+    <>
+      <style>{css}</style>
+      <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #181818', borderRadius: '4px', padding: '28px 32px', marginBottom: '40px' }}>
+
+        {/* Header */}
+        <p style={{ fontFamily: 'Montserrat', fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.22em', color: '#4db0f2', textTransform: 'uppercase', margin: '0 0 6px' }}>
+          Admin
+        </p>
+        <h3 style={{ fontFamily: 'Azonix, sans-serif', fontSize: '1.1rem', color: '#fff', margin: '0 0 24px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Upload to {capitalSection}
+        </h3>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'flex-start' }}>
+
+          {/* File picker */}
+          <label className="btn" style={{ cursor: 'pointer' }}>
             Choose Files
             <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
-        </label>
+          </label>
 
-        {/* File Previews */}
-        {previewUrls.length > 0 && (
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', maxWidth: '100%' }}>
-                {previewUrls.map((url, index) => (
-                    <div
-                        key={index}
-                        style={{
-                            position: 'relative',
-                            width: '100px',
-                            height: '100px',
-                            border: '1px solid #555',
-                            borderRadius: '4px',
-                            overflow: 'hidden',
-                        }}
-                    >
-                        {files[index].type.startsWith('image/') ? (
-                            <img
-                                src={url}
-                                alt={`Preview ${index}`}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                }}
-                            />
-                        ) : (
-                            <video
-                                src={url}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                }}
-                                controls
-                            />
-                        )}
-                        {/* Remove Button */}
-                        <button
-                            onClick={() => handleRemoveFile(index)}
-                            style={{
-                                position: 'absolute',
-                                top: '5px',
-                                right: '5px',
-                                backgroundColor: 'red',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '50%',
-                                cursor: 'pointer',
-                                width: '20px',
-                                height: '20px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            &times;
-                        </button>
-                    </div>
-                ))}
+          {/* Previews */}
+          {previewUrls.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {previewUrls.map((url, i) => (
+                <div key={i} className="preview-thumb">
+                  {files[i].type.startsWith('image/') ? (
+                    <img src={url} alt={`preview-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <video src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                  <button className="preview-remove" onClick={() => handleRemoveFile(i)}>&times;</button>
+                </div>
+              ))}
             </div>
-        )}
+          )}
 
-        {/* Tags Input */}
-        <input
+          {/* Tags */}
+          <input
             type="text"
             placeholder="Tags (comma-separated)"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            style={{
-                width: '100%',
-                maxWidth: '300px',
-                padding: '10px',
-                borderRadius: '4px',
-                border: '1px solid #777',
-                backgroundColor: '#222',
-                color: 'white',
-            }}
-        />
+            className="upload-input"
+          />
 
-        {/* Upload Button */}
-        <button
-            onClick={handleUpload}
-            style={{
-                backgroundColor: '#555',
-                color: 'white',
-                padding: '10px 20px',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                marginTop: '10px',
-            }}
-        >
+          {/* Upload */}
+          <button onClick={handleUpload} className="btn">
             Upload
-        </button>
-    </div>
-    
-    {isEditMode && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
-                    <button
-                onClick={handleDeleteSelectedMedia}
-
-                        style={{
-                            backgroundColor: '#ff0000',
-                            color: 'white',
-                            padding: '10px 20px',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Delete Selected
-                    </button>
-                    <button
-                        onClick={clearSelection}
-                        style={{
-                            backgroundColor: '#555',
-                            color: 'white',
-                            padding: '10px 20px',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Cancel
-                    </button>
-                </div>
-            )}
-            <button
-                onClick={toggleSelectionMode}
-                style={{
-                    width: '100%',
-                    backgroundColor: isEditMode ? '#ff5f5f' : '#555',
-                    color: 'white',
-                    padding: '10px 20px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    marginTop: '10px',
-                }}
-            >
-                {isEditMode ? 'Exit Edit Mode' : 'Edit'}
-            </button>
+          </button>
         </div>
-    );
+
+        {/* Edit mode controls */}
+        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #181818', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button onClick={toggleSelectionMode} className={`btn ${isEditMode ? 'btn-active' : ''}`}>
+            {isEditMode ? 'Exit Edit Mode' : 'Edit'}
+          </button>
+          {isEditMode && (
+            <>
+              <button onClick={handleDeleteSelected} className="btn btn-danger">
+                Delete Selected ({selectedMedia.size})
+              </button>
+              <button onClick={clearSelection} className="btn">
+                Clear Selection
+              </button>
+            </>
+          )}
+        </div>
+
+      </div>
+    </>
+  );
 };
 
 export default UploadSection;

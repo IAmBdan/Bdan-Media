@@ -16,8 +16,6 @@ const Navbar: React.FC = () => {
     navigate('/home');
   };
 
-  
-
   return (
     <>
       <nav className="navbar">

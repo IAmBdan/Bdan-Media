@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
 
@@ -8,6 +8,7 @@ interface Section {
   name: string;
   path: string;
   parent_id?: string | null;
+  hidden?: boolean;
 }
 
 interface MediaItem {
@@ -20,27 +21,41 @@ interface MediaItem {
   uploaded_at?: string;
 }
 
+const sectionUrl = (path: string) => `/${path}`;
+
+const css = `
+  .divider {
+    width: 32px;
+    height: 2px;
+    background: #4db0f2;
+    margin: 12px 0 0;
+  }
+
+  .tile-label {
+    font-family: 'Azonix', sans-serif;
+    font-size: 1.8rem;
+    color: #fff;
+    letter-spacing: 0.06em;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.8);
+  }
+`;
+
 const SectionLandingPage: React.FC = () => {
-  const { sectionPath } = useParams(); // e.g. "music"
-  const [parentSection, setParentSection] = useState<Section | null>(null);
-  const [childSections, setChildSections] = useState<Section[]>([]);
+  const { sectionPath } = useParams();
+  const navigate = useNavigate();
+  const [parentSection, setParentSection]     = useState<Section | null>(null);
+  const [childSections, setChildSections]     = useState<Section[]>([]);
   const [subsectionImages, setSubsectionImages] = useState<Record<string, MediaItem | null>>({});
-
-  // Loading / error states
+  const [hoveredId, setHoveredId]             = useState<string | null>(null);
   const [loadingSections, setLoadingSections] = useState(false);
-  const [loadingMedia, setLoadingMedia] = useState(false);
-  const [error, setError] = useState("");
+  const [loadingMedia, setLoadingMedia]       = useState(false);
+  const [error, setError]                     = useState("");
 
-  /**
-   * Fetch the parent section + all sections, then filter children.
-   */
   const fetchSections = async () => {
     if (!sectionPath) return;
     setLoadingSections(true);
     setError("");
-
     try {
-      // 1) fetch parent by path
       const parentRes = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/api/sections/path`,
         { params: { path: sectionPath } }
@@ -48,15 +63,10 @@ const SectionLandingPage: React.FC = () => {
       const pSection: Section = parentRes.data;
       setParentSection(pSection);
 
-      // 2) fetch all, filter for children
-      const allSectionsRes = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/sections`
-      );
-      const allSections: Section[] = allSectionsRes.data || [];
-      const children = allSections.filter((s) => s.parent_id === pSection.id);
-
+      const allRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/sections`);
+      const children = (allRes.data || []).filter((s: Section) => s.parent_id === pSection.id && !s.hidden);
       setChildSections(children);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching sections:", err);
       setError("Could not load sections.");
     } finally {
@@ -64,258 +74,196 @@ const SectionLandingPage: React.FC = () => {
     }
   };
 
-  /**
-   *  For each child, pick exactly one image that matches orientation.
-   *  If none found or path ends with /videos or /recaps, fallback => /photos
-   *  Also ensure no duplicates among children (unique s3_key).
-   */
+  const pickOneValidImage = async (
+    path: string, wantH: boolean, wantV: boolean, usedKeys: Set<string>
+  ): Promise<MediaItem | null> => {
+    try {
+      const { data } = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/api/media/section`,
+        { params: { sectionPath: path } }
+      );
+      let media: MediaItem[] = (data || []).filter((m: MediaItem) => m.type === "image");
+      if (wantH) media = media.filter((m) => m.width >= m.height);
+      if (wantV) media = media.filter((m) => m.height > m.width);
+      media = media.filter((m) => !usedKeys.has(m.s3_key));
+      return media.length ? media[Math.floor(Math.random() * media.length)] : null;
+    } catch { return null; }
+  };
+
+  const buildFallbackPath = (p: string) =>
+    p.replace(/\/(videos|recaps|multicams)$/i, "/photos");
+
+  const endsWithMedia = (p: string) =>
+    /\/(videos|recaps)$/i.test(p);
+
   const fetchImagesForSubsections = async (children: Section[]) => {
     setLoadingMedia(true);
-
-    // figure out orientation logic
-    const layoutCount = children.length;
-    const wantHorizontal = layoutCount === 2 || layoutCount === 4;
-    const wantVertical = layoutCount === 3;
-
-    // track used images to prevent duplicates
+    const n = children.length;
+    const wantH = n === 2 || n === 4;
+    const wantV = n === 3;
     const usedKeys = new Set<string>();
-
     const newImages: Record<string, MediaItem | null> = {};
 
     for (const child of children) {
-      try {
-        let picked = await pickOneValidImage(child.path, wantHorizontal, wantVertical, usedKeys);
-
-        // If we found none or the path ends with /videos or /recaps => fallback
-        if (!picked || endsWithVideosOrRecaps(child.path)) {
-          const fallbackPath = buildFallbackPath(child.path);
-          console.log(`Falling back from ${child.path} to ${fallbackPath}`);
-          picked = await pickOneValidImage(fallbackPath, wantHorizontal, wantVertical, usedKeys);
-        }
-
-        newImages[child.id] = picked || null;
-
-        // If we found an image, mark its s3_key as used
-        if (picked) {
-          usedKeys.add(picked.s3_key);
-        }
-      } catch (err) {
-        console.error("Error fetching media for", child.path, err);
-        newImages[child.id] = null;
-      }
+      let picked = await pickOneValidImage(child.path, wantH, wantV, usedKeys);
+      if (!picked || endsWithMedia(child.path))
+        picked = await pickOneValidImage(buildFallbackPath(child.path), wantH, wantV, usedKeys);
+      newImages[child.id] = picked ?? null;
+      if (picked) usedKeys.add(picked.s3_key);
     }
 
     setSubsectionImages(newImages);
     setLoadingMedia(false);
   };
 
-  /**
-   * Helper: pick one valid image that hasn't been used yet.
-   */
-  const pickOneValidImage = async (
-    path: string,
-    wantHorizontal: boolean,
-    wantVertical: boolean,
-    usedKeys: Set<string>
-  ): Promise<MediaItem | null> => {
-    try {
-      const mediaRes = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/media/section`,
-        { params: { sectionPath: path } }
-      );
-      let allMedia: MediaItem[] = mediaRes.data || [];
+  useEffect(() => { fetchSections(); }, [sectionPath]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (childSections.length > 0) fetchImagesForSubsections(childSections); }, [childSections]); // eslint-disable-line react-hooks/exhaustive-deps
 
-      // only images
-      allMedia = allMedia.filter((m) => m.type === "image");
+  // ── layout ────────────────────────────────────────────────────────────────
+  const n = childSections.length;
+  const gridCols  = n === 3 ? 3 : 2;
+  const aspectRatio = n === 3 ? '2/3' : '16/9';
 
-      // orientation
-      if (wantHorizontal) {
-        allMedia = allMedia.filter((m) => m.width >= m.height);
-      } else if (wantVertical) {
-        allMedia = allMedia.filter((m) => m.height > m.width);
-      }
-
-      // remove duplicates by excluding used s3_keys
-      allMedia = allMedia.filter((m) => !usedKeys.has(m.s3_key));
-
-      if (allMedia.length === 0) return null;
-
-      // pick random from the remaining
-      return allMedia[Math.floor(Math.random() * allMedia.length)];
-    } catch (err) {
-      console.error(`Error fetching media for path: ${path}`, err);
-      return null;
-    }
-  };
-
-  /**
-   * If path ends with /videos or /recaps -> return /photos
-   */
-  const buildFallbackPath = (originalPath: string): string => {
-    let fallback = originalPath;
-    const lower = originalPath.toLowerCase();
-
-    if (lower.endsWith("/videos")) {
-      fallback = originalPath.replace(/\/videos$/i, "/photos");
-    } else if (lower.endsWith("/recaps")) {
-      fallback = originalPath.replace(/\/recaps$/i, "/photos");
-    }
-    else if (lower.endsWith("/multicams")) {
-      fallback = originalPath.replace(/\/multicams$/i, "/photos");
-    }
-    return fallback;
-  };
-
-  const endsWithVideosOrRecaps = (path: string): boolean => {
-    const lower = path.toLowerCase();
-    return lower.endsWith("/videos") || lower.endsWith("/recaps");
-  };
-
-  // On mount or path change => fetch parent + children
-  useEffect(() => {
-    fetchSections();
-  }, [sectionPath]);
-
-  // once childSections is known => fetch images
-  useEffect(() => {
-    if (childSections.length > 0) {
-      fetchImagesForSubsections(childSections);
-    }
-  }, [childSections]);
-
-  // layout check
-  const layoutCount = childSections.length;
-  if (layoutCount < 2 || layoutCount > 4) {
-    return (
-      <div className="bg-rich_black-500 text-white-500 min-h-screen flex flex-col items-center justify-center">
-        <p style={{ fontFamily: "Azonix, sans-serif", fontSize: "2rem" }}>
-          Need exactly 2, 3, or 4 child subsections. Found: {layoutCount}
-        </p>
-      </div>
-    );
-  }
-
-  // container classes
-  let containerClasses = "";
-  let aspectClass = "";
-  let gapClass = "gap-2";
-  if (layoutCount === 2) {
-    containerClasses = "grid grid-cols-1 md:grid-cols-2"; // 1 col on mobile, 2 on md+
-    aspectClass = "aspect-video"; // wide
-  } else if (layoutCount === 3) {
-    containerClasses = "grid grid-cols-1 md:grid-cols-3"; // 1 col on mobile, 3 on md+
-    aspectClass = "aspect-[2/3]"; // tall
-    gapClass = "gap-1"; // tighter for vertical
-  } else if (layoutCount === 4) {
-    containerClasses = "grid grid-cols-1 md:grid-cols-2"; // effectively 2x2 on md+
-    aspectClass = "aspect-video"; // wide
-  }
-
-  // handle loading / error
+  // ── states ────────────────────────────────────────────────────────────────
   if (loadingSections || loadingMedia) {
     return (
-      <div className="bg-rich_black-500 text-white-500 min-h-screen flex items-center justify-center">
-        <p style={{ fontFamily: "Azonix, sans-serif", fontSize: "2rem" }}>
+      <div style={{ backgroundColor: '#080808', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: 'Montserrat', fontSize: '0.65rem', letterSpacing: '0.22em', color: '#4db0f2', textTransform: 'uppercase' }}>
           Loading...
         </p>
       </div>
     );
   }
-  if (error) {
+
+  if (error || !parentSection) {
     return (
-      <div className="bg-rich_black-500 text-white-500 min-h-screen flex items-center justify-center">
-        <p style={{ fontFamily: "Azonix, sans-serif", fontSize: "2rem" }}>
-          {error}
+      <div style={{ backgroundColor: '#080808', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: 'Azonix, sans-serif', fontSize: '1.5rem', color: '#fff' }}>
+          {error || `No section found for: ${sectionPath}`}
         </p>
       </div>
     );
   }
-  if (!parentSection) {
+
+  if (n < 2 || n > 4) {
     return (
-      <div className="bg-rich_black-500 text-white-500 min-h-screen flex items-center justify-center">
-        <p style={{ fontFamily: "Azonix, sans-serif", fontSize: "2rem" }}>
-          No parent section found for path: {sectionPath}
+      <div style={{ backgroundColor: '#080808', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: 'Azonix, sans-serif', fontSize: '1.5rem', color: '#fff' }}>
+          Unsupported layout: {n} subsections
         </p>
       </div>
     );
   }
 
   return (
-    <motion.div
-      className="bg-rich_black-500 text-white-500 min-h-screen flex flex-col items-center px-4"
-      style={{ paddingTop: "1.5rem", fontFamily: "Azonix, sans-serif" }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1.2, ease: "easeInOut" }}
-    >
-      {/* Main Section Title */}
-      <motion.h1
-        style={{ fontSize: "3rem", textAlign: "center", marginBottom: "1.5rem" }}
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 1, ease: "easeOut" }}
+    <>
+      <style>{css}</style>
+      <motion.div
+        style={{ backgroundColor: '#080808', minHeight: '100vh', padding: '64px 48px 80px', fontFamily: 'Montserrat, sans-serif' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
       >
-        {parentSection.name.toUpperCase()}
-      </motion.h1>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
-      {/* Child subsections grid */}
-      <div className={`${containerClasses} ${gapClass} w-full max-w-6xl mx-auto`}>
-        {childSections.map((child, idx) => {
-          const image = subsectionImages[child.id];
+          {/* Back */}
+          <motion.button
+            onClick={() => navigate('/work')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', color: '#a6d7f8', fontFamily: 'Montserrat', fontSize: '0.62rem', letterSpacing: '0.2em', fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer', padding: 0, marginBottom: '40px' }}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+            whileHover={{ color: '#fff' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Back
+          </motion.button>
 
-          return (
-            <motion.div
-              key={child.id}
-              className={`group relative overflow-hidden rounded-md ${aspectClass}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: idx * 0.1 }}
-              // scale on hover for container
-              whileHover={{ scale: 1.02 }}
-            >
-              <Link to={`/work/${child.path}`} className="block w-full h-full">
-                {image ? (
-                  // The image, scale a bit more on hover
-                  <motion.img
-                    src={`https://${process.env.REACT_APP_S3_BUCKET}/${image.s3_key}`}
-                    alt={child.name}
-                    className="w-full h-full object-cover"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.1, ease: "easeInOut" }}
-                  />
-                ) : (
-                  // Fallback if no image
-                  <div className="flex items-center justify-center w-full h-full bg-slate-700">
-                    <p style={{ fontFamily: "Azonix, sans-serif", fontSize: "1rem" }}>
-                      NO IMAGE FOUND
-                    </p>
-                  </div>
-                )}
+          {/* Header */}
+          <motion.div
+            style={{ marginBottom: '48px' }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <p style={{ fontFamily: 'Montserrat', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.26em', color: '#4db0f2', textTransform: 'uppercase', margin: '0 0 12px' }}>
+              Select a category
+            </p>
+            <h1 style={{ fontFamily: 'Azonix, sans-serif', fontSize: '2.2rem', color: '#fff', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {parentSection.name}
+            </h1>
+            <div className="divider" />
+          </motion.div>
 
-                {/* Dark overlay => 0.7 -> 0.3 */}
+          {/* Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: '6px', width: '100%' }}>
+            {childSections.map((child, idx) => {
+              const image = subsectionImages[child.id];
+              return (
                 <motion.div
-                  className="absolute inset-0 bg-black z-10 pointer-events-none"
-                  initial={{ opacity: 0.8 }}
-                  animate={{ opacity: 0.3 }}
-                  transition={{ duration: 3.5, ease: "easeInOut" }}
-                />
-
-                {/* Subsection Name */}
-                <motion.div
-                  className="absolute inset-0 flex items-center justify-center z-20"
-                  style={{ fontFamily: "Azonix, sans-serif", fontSize: "2.55rem" }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.7 + idx * 0.1 }}
+                  key={child.id}
+                  style={{ position: 'relative', overflow: 'hidden', borderRadius: '3px', aspectRatio, zIndex: hoveredId === child.id ? 10 : 1 }}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: idx * 0.06 }}
+                  whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(77,176,242,0.15), 0 10px 24px rgba(77,176,242,0.12)' }}
+                  whileTap={{ scale: 0.98 }}
+                  onHoverStart={() => setHoveredId(child.id)}
+                  onHoverEnd={() => setHoveredId(null)}
                 >
-                  {child.name.toUpperCase()}
+                                      <Link to={sectionUrl(child.path)} style={{ display: 'block', width: '100%', height: '100%' }}>
+
+                    {/* Image */}
+                    {image ? (
+                      <motion.img
+                        src={`https://${process.env.REACT_APP_S3_BUCKET}/${image.s3_key}`}
+                        alt={child.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'brightness(0.7)' }}
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.35, ease: 'easeInOut' }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', background: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ color: '#222', fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Montserrat' }}>No image</span>
+                      </div>
+                    )}
+
+                    {/* Bottom gradient */}
+                    <motion.div
+                      style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%', background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%)', zIndex: 10, pointerEvents: 'none' }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4, delay: 0.2 + idx * 0.06 }}
+                    />
+
+                    {/* Label */}
+                    <motion.div
+                      className="tile-label"
+                      style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '16px 20px', textAlign: 'left' }}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.3 + idx * 0.08 }}
+                    >
+                      {child.name.toUpperCase()}
+                    </motion.div>
+
+                    {/* Blue accent line on hover */}
+                    <motion.div
+                      style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: '#4db0f2', zIndex: 30, scaleX: 0, originX: 0 }}
+                      whileHover={{ scaleX: 1 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </Link>
                 </motion.div>
-              </Link>
-            </motion.div>
-          );
-        })}
-      </div>
-    </motion.div>
+              );
+            })}
+          </div>
+
+        </div>
+      </motion.div>
+    </>
   );
 };
 

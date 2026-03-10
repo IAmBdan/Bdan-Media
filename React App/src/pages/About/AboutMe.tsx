@@ -2,75 +2,107 @@ import React from "react";
 import { motion } from "framer-motion";
 import brianpicture from "../../brianpicture.jpg";
 
+const css = `
+  .divider {
+    width: 32px;
+    height: 2px;
+    background: #4db0f2;
+    margin: 12px 0 0;
+  }
+
+  .about-body p {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 400;
+    line-height: 1.85;
+    color: #909090;
+    margin: 0 0 20px;
+  }
+
+  .about-body p:last-child {
+    margin-bottom: 0;
+  }
+`;
+
 const AboutMe: React.FC = () => {
   return (
-    <motion.div
-      className="about-me min-h-screen flex flex-col items-center justify-center bg-rich_black-500 text-slate-300 px-6 py-12"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1.5, ease: "easeInOut" }}
-    >
-      {/* Header */}
-      <motion.h1
-        className="font-azonix text-4xl md:text-5xl text-slate-100 mb-12 text-center"
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-      >
-        About Me
-      </motion.h1>
-
-      {/* Boxed Content */}
+    <>
+      <style>{css}</style>
       <motion.div
-        className="bg-slate-700/50 border border-slate-600 shadow-xl rounded-lg flex flex-col lg:flex-row p-8 gap-8 max-w-4xl"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
+        style={{ backgroundColor: '#080808', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '64px', paddingBottom: '80px', paddingLeft: '24px', paddingRight: '24px' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
       >
-        {/* Profile Image */}
+        {/* Header */}
         <motion.div
-          className="profile-image flex-shrink-0"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
+          style={{ textAlign: 'left', width: '100%', maxWidth: '900px', marginBottom: '48px' }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         >
-          <img
-            src={brianpicture}
-            alt="Portrait of Brian Daniels"
-            className="w-80 h-96 object-cover border-4 border-slate-600 rounded-lg"
-          />
+          <p style={{ fontFamily: 'Montserrat', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.26em', color: '#4db0f2', textTransform: 'uppercase', margin: '0 0 12px' }}>
+            The person behind the lens
+          </p>
+          <h1 style={{ fontFamily: 'Azonix, sans-serif', fontSize: '2.2rem', color: '#fff', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            About Me
+          </h1>
+          <div className="divider" />
         </motion.div>
 
-        {/* Profile Text */}
+        {/* Card */}
         <motion.div
-          className="profile-text text-center lg:text-left flex flex-col justify-center"
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1.5, delay: 0.7, ease: "easeOut" }}
+          style={{ backgroundColor: '#0d0d0d', border: '1px solid #181818', borderRadius: '4px', padding: '48px', width: '100%', maxWidth: '900px', display: 'flex', flexDirection: 'row', gap: '48px', alignItems: 'flex-start' }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
         >
-          <p className="text-base md:text-lg leading-relaxed mb-4">
-            My name is Brian Daniels. I am a photographer and videographer with
-            a love for capturing moments from all aspects of life. I might be
-            the most spontaneous guy you know, and it continues to foster
-            experiences I never thought possible. I currently attend
-            Northeastern University, working toward my degree in Computer
-            Science.
-          </p>
-          <p className="text-base md:text-lg leading-relaxed mb-4">
-            My journey started when I was studying abroad. I began taking
-            photos with a drone and my phone, and with the support of my
-            friends, Since returning, I’ve taken every
-            opportunity to grow and become the best I can be.  Sleepless nights, travel, and determination
-            have shaped me into who I am today.
-          </p>
-          <p className="text-base md:text-lg leading-relaxed">
-            I thrive on the thrill of meeting new people, exploring new places,
-            and saying yes to every opportunity I can. This mindset drives my
-            success, and I love every moment of it.
-          </p>
+          {/* Photo */}
+          <motion.div
+            style={{ flexShrink: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <img
+              src={brianpicture}
+              alt="Portrait of Brian Daniels"
+              style={{ width: '280px', height: '360px', objectFit: 'cover', borderRadius: '3px', border: '1px solid #181818', display: 'block' }}
+            />
+          </motion.div>
+
+          {/* Text */}
+          <motion.div
+            className="about-body"
+            style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+          >
+            <p>
+              I'm Brian Daniels — a Boston and New York City-based music photographer,
+              videographer, and multicam producer. I create high-impact
+              photo and video content for artists, brands, festivals, and live events, capturing
+              the energy at its peak.
+            </p>
+            <p>
+              My work has taken me across the country and beyond, shooting and producing
+              for some of the biggest names in the industry — Fred Again, Fisher, DJ Diesel,
+              Cloonee, and many more. From intimate club sets to massive festival mainstages,
+              I've built a reputation for delivering cinematic, high-quality content under
+              pressure. My multicam production work brings a unqiue look to live
+              performances, giving artists content that stands out and resonates with fans.
+            </p>
+            <p>
+              Whether you're an artist looking for a music event photographer in Boston or NYC,
+              need a videographer for your next festival run, or want a full multicam production
+              for your live show — I'm the person for it. Every shoot is driven by the same thing:
+              a relentless passion for the music and the moments that define it.
+            </p>
+          </motion.div>
         </motion.div>
       </motion.div>
-    </motion.div>
+    </>
   );
 };
 

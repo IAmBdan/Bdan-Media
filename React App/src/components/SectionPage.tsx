@@ -1,15 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 import UploadSection from './UploadSection';
 import TiledLayout from './TiledLayout';
 import { useAuth } from '../context/AuthContext';
+
+const sectionUrl = (path: string) => `/${path}`;
 
 interface Section {
   id: string;
   name: string;
   path: string;
   parent_id?: string;
+  hidden?: boolean;
 }
 
 interface MediaItem {
@@ -21,198 +25,181 @@ interface MediaItem {
   type: 'image' | 'video';
 }
 
+const css = `
+  .divider {
+    width: 32px;
+    height: 2px;
+    background: #4db0f2;
+    margin: 12px 0 0;
+  }
+
+  .other-card {
+    padding: 16px 24px;
+    border: 1px solid #181818;
+    border-radius: 3px;
+    background: #0d0d0d;
+    color: #6a6a6a;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: border-color 0.25s ease, color 0.25s ease;
+  }
+
+  .other-card:hover {
+    border-color: #4db0f2;
+    color: #fff;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    color: #a6d7f8;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 40px;
+    transition: color 0.2s ease;
+  }
+
+  .back-btn:hover { color: #fff; }
+  .back-btn:hover svg { transform: translateX(-3px); }
+  .back-btn svg { transition: transform 0.2s ease; }
+`;
+
 const SectionPage: React.FC = () => {
-  const { '*': rawPath } = useParams(); // Match nested paths
-  const path = rawPath?.replace(/^work\//, ''); // Strip out "work/" prefix
+  const { '*': rawPath } = useParams();
+  const path = rawPath?.replace(/^work\//, '');
   const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const [section, setSection] = useState<Section | null>(null);
-  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [section, setSection]             = useState<Section | null>(null);
+  const [media, setMedia]                 = useState<MediaItem[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<Set<string>>(new Set());
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
-
-  // New state: the “static” sections we want to list at the bottom
+  const [isEditMode, setIsEditMode]       = useState(false);
   const [bottomSections, setBottomSections] = useState<Section[]>([]);
 
-  // Debugging Helper
-  const logState = useCallback(() => {
-    console.log('Current path:', path);
-    console.log('Current section:', section);
-    console.log('Media items:', media);
-  }, [path, section, media]);
+  const parentPath = path?.includes('/') ? path.split('/').slice(0, -1).join('/') : null;
 
-  // 1) Fetch the “current” section by path + its media
   const fetchSectionByPath = useCallback(async () => {
     try {
-      console.log('Fetching section by path...');
-      const response = await axios.get(
+      const res = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/api/sections/path`,
         { params: { path } }
       );
-      const matchedSection: Section = response.data;
-      console.log('Matched section:', matchedSection);
-      setSection(matchedSection);
+      const matched: Section = res.data;
+      setSection(matched);
 
-      if (matchedSection) {
-        console.log(`Fetching media for sectionId: ${matchedSection.id}`);
-
-        const mediaResponse = await axios.get(
+      if (matched) {
+        const mediaRes = await axios.get(
           `${process.env.REACT_APP_API_BASE_URL}/api/media/section`,
           { params: { sectionPath: path } }
         );
-
-        console.log('Fetched media:', mediaResponse.data);
-        setMedia(mediaResponse.data);
-      } else {
-        console.error('No section found for path:', path);
+        setMedia(mediaRes.data);
       }
-    } catch (error) {
-      console.error('Error fetching section or media:', error);
+    } catch (err) {
+      console.error('Error fetching section or media:', err);
     }
   }, [path]);
 
-  // 2) One-time fetch for the sections we want at the bottom (e.g. top-level only)
   const fetchBottomSections = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/sections`
-      );
-      const allSections: Section[] = response.data;
-
-      // Example: Filter out "logos", "headshots", or child sections
-      const filtered = allSections.filter((sec) => {
-        const nameLower = sec.name.toLowerCase();
-        const isTopLevel = !sec.parent_id; // or sec.parent_id === null
-        const isNotExcluded = nameLower !== 'logos' && nameLower !== 'headshots';
-        return isTopLevel && isNotExcluded;
-      });
-
+      const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/sections`);
+      const filtered = (res.data as Section[]).filter((s) => !s.parent_id && !s.hidden);
       setBottomSections(filtered);
     } catch (err) {
       console.error('Error fetching bottom sections:', err);
     }
   };
 
-  // Watch for resizing
-  useEffect(() => {
-    let resizeTimeout: NodeJS.Timeout;
-
-    const handleResize = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        setContainerWidth(window.innerWidth);
-        console.log('Container width updated:', window.innerWidth);
-      }, 150);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // On mount or path change => fetch the section + media
-  useEffect(() => {
-    if (path) fetchSectionByPath();
-  }, [path, fetchSectionByPath]);
-
-  // On mount => fetch sections for the bottom
-  useEffect(() => {
-    fetchBottomSections();
-  }, []);
-
-  // Debug
-  useEffect(() => {
-    logState();
-  }, [logState]);
+  useEffect(() => { if (path) fetchSectionByPath(); }, [path, fetchSectionByPath]);
+  useEffect(() => { fetchBottomSections(); }, []);
 
   return (
-    <div style={{ backgroundColor: '#000', color: '#fff', padding: '15px' }}>
-      <h2
-        style={{
-          textAlign: 'center',
-          fontFamily: 'Azonix, sans-serif',
-          fontSize: 60,
-        }}
+    <>
+      <style>{css}</style>
+      <motion.div
+        style={{ backgroundColor: '#080808', color: '#fff', minHeight: '100vh', padding: '64px 48px 80px' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
       >
-        {section?.name?.toUpperCase() || 'SECTION'}
-      </h2>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
-      {user?.role === 'admin' && section && (
-        <UploadSection
-          section={section?.path}
-          onUploadComplete={fetchSectionByPath}
-          onDelete={() => {
-            console.log('Delete action triggered');
-          }}
-          isEditMode={isEditMode}
-          toggleSelectionMode={() => setIsEditMode(!isEditMode)}
-          clearSelection={() => setSelectedMedia(new Set())}
-          selectedMedia={selectedMedia}
-        />
-      )}
+          {/* Back */}
+          <button className="back-btn" onClick={() => navigate(parentPath ? sectionUrl(parentPath) : '/work')}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Back
+          </button>
 
-      <TiledLayout
-        media={media}
-        containerWidth={window.innerWidth}
-        isEditMode={isEditMode}
-        selectedMedia={selectedMedia}
-        setSelectedMedia={setSelectedMedia}
-      />
+          {/* Header */}
+          <motion.div
+            style={{ marginBottom: '48px' }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <p style={{ fontFamily: 'Montserrat', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.26em', color: '#4db0f2', textTransform: 'uppercase', margin: '0 0 12px' }}>
+              Portfolio
+            </p>
+            <h1 style={{ fontFamily: 'Azonix, sans-serif', fontSize: '2.2rem', color: '#fff', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {section?.name || 'Section'}
+            </h1>
+            <div className="divider" />
+          </motion.div>
 
-      {/* STATIC SECTION LIST AT THE BOTTOM */}
-      <div
-        style={{
-          marginTop: '40px',
-          padding: '10px',
-          borderTop: '1px solid #444',
-          textAlign: 'center',
-        }}
-      >
-        <h3
-          style={{
-            fontFamily: 'Azonix, sans-serif',
-            fontSize: '1.5rem',
-            marginBottom: '15px',
-          }}
-        >
-          OTHER SECTIONS
-        </h3>
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            gap: '10px',
-          }}
-        >
-          {bottomSections.map((sec) => (
-            <Link
-              key={sec.id}
-              to={`/work/${sec.path}`}
-              style={{
-                color: '#a6d7f8',
-                textDecoration: 'none',
-                fontFamily: 'Azonix, sans-serif',
-                fontSize: '1rem',
-                padding: '8px 12px',
-                border: '1px solid #a6d7f8',
-                borderRadius: '8px',
-                backgroundColor: '#1a2634',
-                transition: 'transform 0.2s',
-              }}
-              onMouseOver={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)';
-              }}
-              onMouseOut={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-              }}
-            >
-              {sec.name.toUpperCase()}
-            </Link>
-          ))}
+          {/* Admin upload */}
+          {user?.role === 'admin' && section && (
+            <UploadSection
+              section={section.path}
+              onUploadComplete={fetchSectionByPath}
+              onDelete={() => console.log('Delete triggered')}
+              isEditMode={isEditMode}
+              toggleSelectionMode={() => setIsEditMode(!isEditMode)}
+              clearSelection={() => setSelectedMedia(new Set())}
+              selectedMedia={selectedMedia}
+            />
+          )}
+
+          {/* Media grid */}
+          <TiledLayout
+            media={media}
+            containerWidth={window.innerWidth}
+            isEditMode={isEditMode}
+            selectedMedia={selectedMedia}
+            setSelectedMedia={setSelectedMedia}
+          />
+
+          {/* Other sections */}
+          {bottomSections.length > 0 && (
+            <div style={{ marginTop: '80px', paddingTop: '40px', borderTop: '1px solid #181818' }}>
+              <p style={{ fontFamily: 'Montserrat', fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.24em', color: '#4a4a4a', textTransform: 'uppercase', margin: '0 0 20px' }}>
+                Other Sections
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {bottomSections.map((sec) => (
+                  <Link key={sec.id} to={sectionUrl(sec.path)} className="other-card">
+                    {sec.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </>
   );
 };
 

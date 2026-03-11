@@ -70,7 +70,7 @@ const HomePage: React.FC = () => {
         <div className="intro-wrapper" onClick={skipIntro}>
           <video
             ref={videoRef}
-            src="https://s3.us-east-2.amazonaws.com/bdan.photos/Comic+logo+intro_1.mp4"
+            src="https://d1lkd205tzcot1.cloudfront.net/Comic+logo+intro_1.mp4"
             className="intro-video"
             autoPlay
             muted

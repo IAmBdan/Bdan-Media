@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import LazyMedia from "./LazyMedia";
 
 interface MediaItem {
@@ -12,45 +12,66 @@ interface MediaItem {
 
 interface TiledLayoutProps {
   media: MediaItem[];
-  containerWidth: number;
+  containerWidth: number; // kept for API compat but we measure internally
   selectedMedia: Set<string>;
   setSelectedMedia: React.Dispatch<React.SetStateAction<Set<string>>>;
   isEditMode: boolean;
   targetRowHeight?: number;
 }
 
+const GAP = 2;
+
 const TiledLayout: React.FC<TiledLayoutProps> = ({
   media,
-  containerWidth,
   selectedMedia,
   setSelectedMedia,
   isEditMode,
   targetRowHeight = 300,
 }) => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+
+  // Measure actual rendered width
+  const measure = useCallback(() => {
+    if (wrapperRef.current) {
+      setWidth(wrapperRef.current.getBoundingClientRect().width);
+    }
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
+    return () => ro.disconnect();
+  }, [measure]);
+
   const layout = (() => {
+    if (width === 0) return [];
     const rows: { items: MediaItem[]; rowHeight: number }[] = [];
     let currentRow: MediaItem[] = [];
-    let currentRowWidth = 0;
+    let currentRowAspectSum = 0;
 
     media.forEach((item) => {
       const aspectRatio = item.width / item.height;
-      const itemWidth = targetRowHeight * aspectRatio;
+      const projectedWidth = (currentRowAspectSum + aspectRatio) * targetRowHeight
+        + currentRow.length * GAP; // gaps so far
 
-      if (currentRowWidth + itemWidth > containerWidth) {
-        const rowScale = containerWidth / currentRowWidth;
-        const rowHeight = targetRowHeight * rowScale;
+      if (projectedWidth > width && currentRow.length > 0) {
+        // Solve: rowHeight * aspectSum + (n-1)*GAP = width
+        const n = currentRow.length;
+        const rowHeight = (width - (n - 1) * GAP) / currentRowAspectSum;
         rows.push({ items: currentRow, rowHeight });
         currentRow = [];
-        currentRowWidth = 0;
+        currentRowAspectSum = 0;
       }
 
       currentRow.push(item);
-      currentRowWidth += itemWidth;
+      currentRowAspectSum += aspectRatio;
     });
 
     if (currentRow.length > 0) {
-      const rowScale = containerWidth / currentRowWidth;
-      const rowHeight = targetRowHeight * rowScale;
+      const n = currentRow.length;
+      const rowHeight = (width - (n - 1) * GAP) / currentRowAspectSum;
       rows.push({ items: currentRow, rowHeight });
     }
 
@@ -67,22 +88,24 @@ const TiledLayout: React.FC<TiledLayoutProps> = ({
   };
 
   return (
-    <div style={{ width: "100%", boxSizing: "border-box", margin: 0, padding: 0 }}>
-      {layout.map((row, rowIndex) => (
+    <div ref={wrapperRef} style={{ width: "100%", boxSizing: "border-box" }}>
+      {width > 0 && layout.map((row, rowIndex) => (
         <div
           key={rowIndex}
           style={{
             display: "flex",
             flexDirection: "row",
-            width: "100%",
-            marginBottom: "2px",
+            gap: `${GAP}px`,
+            marginBottom: `${GAP}px`,
+            height: `${row.rowHeight}px`,
+            // Ensure row never exceeds wrapper
+            maxWidth: "100%",
+            overflow: "hidden",
           }}
         >
           {row.items.map((item) => {
             const aspectRatio = item.width / item.height;
             const itemWidth = row.rowHeight * aspectRatio;
-            const itemHeight = row.rowHeight;
-
             const isSelected = selectedMedia.has(item.id);
 
             return (
@@ -90,12 +113,10 @@ const TiledLayout: React.FC<TiledLayoutProps> = ({
                 key={item.id}
                 style={{
                   width: `${itemWidth}px`,
-                  height: `${itemHeight}px`,
-                  margin: "1px",
+                  height: `${row.rowHeight}px`,
+                  flexShrink: 0,
                   border: isEditMode
-                    ? isSelected
-                      ? "2px solid red"
-                      : "2px solid transparent"
+                    ? isSelected ? "2px solid red" : "2px solid transparent"
                     : "none",
                   cursor: isEditMode ? "pointer" : "default",
                   boxSizing: "border-box",
@@ -103,15 +124,11 @@ const TiledLayout: React.FC<TiledLayoutProps> = ({
                 }}
                 onClick={() => isEditMode && toggleSelection(item.id)}
               >
-                  <LazyMedia
+                <LazyMedia
                   src={`https://${process.env.REACT_APP_S3_BUCKET}/${item.s3_key}`}
                   alt={item.tags?.join(", ") || "media"}
-                  type={item.type} // Pass the type from your MediaItem
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
+                  type={item.type}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               </div>
             );

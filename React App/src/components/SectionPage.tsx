@@ -102,12 +102,6 @@ const css = `
     color: #fff;
   }
 
-  .sibling-btn:disabled {
-    opacity: 0.2;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-
   .top-nav {
     display: flex;
     align-items: center;
@@ -135,8 +129,21 @@ const SectionPage: React.FC = () => {
   const [isEditMode, setIsEditMode]         = useState(false);
   const [bottomSections, setBottomSections] = useState<Section[]>([]);
   const [siblings, setSiblings]             = useState<Section[]>([]);
+  const containerRef                        = React.useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
 
   const parentPath = path?.includes('/') ? path.split('/').slice(0, -1).join('/') : null;
+
+  // Update container width on resize
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => setContainerWidth(window.innerWidth), 150);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchSectionByPath = useCallback(async () => {
     try {
@@ -170,15 +177,12 @@ const SectionPage: React.FC = () => {
     }
   };
 
-  // Fetch siblings — all sections under the same parent including current
   const fetchSiblings = useCallback(async () => {
     if (!section) return;
     try {
       const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/sections`);
       const all = res.data as Section[];
-      const sibs = all.filter(
-        (s) => s.parent_id === section.parent_id && !s.hidden
-      );
+      const sibs = all.filter((s) => s.parent_id === section.parent_id && !s.hidden);
       setSiblings(sibs);
     } catch (err) {
       console.error('Error fetching siblings:', err);
@@ -189,7 +193,6 @@ const SectionPage: React.FC = () => {
   useEffect(() => { fetchBottomSections(); }, []);
   useEffect(() => { if (section) fetchSiblings(); }, [section, fetchSiblings]);
 
-  // Find prev/next sibling based on current section's position
   const siblingIndex = siblings.findIndex((s) => s.id === section?.id);
   const prevSibling  = siblingIndex > 0 ? siblings[siblingIndex - 1] : null;
   const nextSibling  = siblingIndex < siblings.length - 1 ? siblings[siblingIndex + 1] : null;
@@ -205,7 +208,7 @@ const SectionPage: React.FC = () => {
       >
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
-          {/* Top nav: back + sibling arrows */}
+          {/* Top nav */}
           <div className="top-nav">
             <button className="back-btn" onClick={() => navigate(parentPath ? sectionUrl(parentPath) : '/work')}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -280,13 +283,15 @@ const SectionPage: React.FC = () => {
           )}
 
           {/* Media grid */}
-          <TiledLayout
-            media={media}
-            containerWidth={window.innerWidth}
-            isEditMode={isEditMode}
-            selectedMedia={selectedMedia}
-            setSelectedMedia={setSelectedMedia}
-          />
+          <div ref={containerRef} style={{ width: '100%' }}>
+            <TiledLayout
+              media={media}
+              containerWidth={containerWidth}
+              isEditMode={isEditMode}
+              selectedMedia={selectedMedia}
+              setSelectedMedia={setSelectedMedia}
+            />
+          </div>
 
           {/* Other sections */}
           {bottomSections.length > 0 && (

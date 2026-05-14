@@ -1,27 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { motion } from "framer-motion";
+import React, { useEffect, useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { motion } from 'framer-motion';
+import { Section, MediaItem, prefetchSectionImages } from '../utils/mediaHelpers';
 
 const sectionUrl = (path: string) => `/${path}`;
-
-interface Section {
-  id: string;
-  name: string;
-  path: string;
-  parent_id?: string | null;
-  hidden?: boolean;
-}
-
-interface MediaItem {
-  id: string;
-  s3_key: string;
-  width: number;
-  height: number;
-  tags: string[] | null;
-  type: "image" | "video";
-  uploaded_at?: string;
-}
 
 const css = `
   .slp-wrap {
@@ -96,7 +79,7 @@ const SectionLandingPage: React.FC = () => {
   const [hoveredId, setHoveredId]               = useState<string | null>(null);
   const [loadingSections, setLoadingSections]   = useState(false);
   const [loadingMedia, setLoadingMedia]         = useState(false);
-  const [error, setError]                       = useState("");
+  const [error, setError]                       = useState('');
   const [isMobile, setIsMobile]                 = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -108,7 +91,7 @@ const SectionLandingPage: React.FC = () => {
   const fetchSections = async () => {
     if (!sectionPath) return;
     setLoadingSections(true);
-    setError("");
+    setError('');
     try {
       const parentRes = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/api/sections/path`,
@@ -123,64 +106,28 @@ const SectionLandingPage: React.FC = () => {
       const children = all.filter((s: Section) => s.parent_id === pSection.id && !s.hidden);
       setChildSections(children);
 
-      // top-level sections for prev/next
       const topLevel = all.filter((s: Section) => !s.parent_id && !s.hidden);
       setTopLevelSections(topLevel);
     } catch (err) {
-      console.error("Error fetching sections:", err);
-      setError("Could not load sections.");
+      console.error('Error fetching sections:', err);
+      setError('Could not load sections.');
     } finally {
       setLoadingSections(false);
     }
   };
 
-  const pickOneValidImage = async (
-    path: string, wantH: boolean, wantV: boolean, usedKeys: Set<string>
-  ): Promise<MediaItem | null> => {
-    try {
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/media/section`,
-        { params: { sectionPath: path } }
-      );
-      let media: MediaItem[] = (data || []).filter((m: MediaItem) => m.type === "image");
-      if (wantH) media = media.filter((m) => m.width >= m.height);
-      if (wantV) media = media.filter((m) => m.height > m.width);
-      media = media.filter((m) => !usedKeys.has(m.s3_key));
-      return media.length ? media[Math.floor(Math.random() * media.length)] : null;
-    } catch { return null; }
-  };
-
-  const buildFallbackPath = (p: string) =>
-    p.replace(/\/(videos|recaps|multicams)$/i, "/photos");
-
-  const endsWithMedia = (p: string) =>
-    /\/(videos|recaps)$/i.test(p);
-
-  const fetchImagesForSubsections = async (children: Section[]) => {
+  const fetchImages = async (children: Section[]) => {
     setLoadingMedia(true);
-    const n = children.length;
-    const wantH = n === 2 || n === 4;
-    const wantV = n === 3;
-    const usedKeys = new Set<string>();
-    const newImages: Record<string, MediaItem | null> = {};
-
-    for (const child of children) {
-      let picked = await pickOneValidImage(child.path, wantH, wantV, usedKeys);
-      if (!picked || endsWithMedia(child.path))
-        picked = await pickOneValidImage(buildFallbackPath(child.path), wantH, wantV, usedKeys);
-      newImages[child.id] = picked ?? null;
-      if (picked) usedKeys.add(picked.s3_key);
-    }
-
-    setSubsectionImages(newImages);
+    const images = await prefetchSectionImages(children);
+    setSubsectionImages(images);
     setLoadingMedia(false);
   };
 
   useEffect(() => { fetchSections(); }, [sectionPath]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (childSections.length > 0) fetchImagesForSubsections(childSections); }, [childSections]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (childSections.length > 0) fetchImages(childSections); }, [childSections]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const n = childSections.length;
-  const gridCols  = n === 3 ? 3 : 2;
+  const gridCols   = n === 3 ? 3 : 2;
   const gridAspect = n === 3 ? '2/3' : '16/9';
 
   const topLevelIndex = topLevelSections.findIndex((s) => s.id === parentSection?.id);
@@ -224,7 +171,7 @@ const SectionLandingPage: React.FC = () => {
         className="slp-wrap"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
+        transition={{ duration: 0.4, ease: 'easeInOut' }}
       >
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
@@ -330,7 +277,7 @@ const SectionLandingPage: React.FC = () => {
                     )}
 
                     <motion.div
-                      style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%', background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%)', zIndex: 10, pointerEvents: 'none' }}
+                      style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0) 65%)', zIndex: 10, pointerEvents: 'none' }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.4, delay: 0.2 + idx * 0.06 }}

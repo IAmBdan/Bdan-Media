@@ -1,36 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Section, MediaItem, prefetchSectionImages } from '../../utils/mediaHelpers';
 
 const sectionUrl = (path: string) => `/${path}`;
-
-// ── PALETTE ───────────────────────────────────────────────────────────────────
-// bg:           #080808
-// card:         #0d0d0d
-// border:       #181818
-// borderHov:    #4db0f2
-// textDim:      #6a6a6a
-// textHov:      #ffffff
-// accent:       #4db0f2
-// accentLight:  #a6d7f8
-
-interface Section {
-  id: string;
-  name: string;
-  path: string;
-  parent_id?: string | null;
-  hidden?: boolean;
-}
-
-interface MediaItem {
-  id: string;
-  s3_key: string;
-  width: number;
-  height: number;
-  tags: string[] | null;
-  type: 'image' | 'video';
-}
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Inter:wght@300;400;500&display=swap');
@@ -166,7 +140,6 @@ const css = `
   }
 `;
 
-// ── layout helpers ────────────────────────────────────────────────────────────
 const getColCount = (n: number): number => {
   if (n <= 3) return n;
   if (n === 4) return 2;
@@ -176,50 +149,15 @@ const getColCount = (n: number): number => {
   return 3;
 };
 
-// ── media helpers ─────────────────────────────────────────────────────────────
-const endsWithMedia = (p: string) => /\/(videos|recaps|multicams)$/i.test(p);
-const fallbackPath  = (p: string) => p.replace(/\/(videos|recaps|multicams)$/i, '/photos');
-
-const pickImage = async (
-  path: string, wantH: boolean, wantV: boolean, used: Set<string>
-): Promise<MediaItem | null> => {
-  try {
-    const { data } = await axios.get(
-      `${process.env.REACT_APP_API_BASE_URL}/api/media/section`,
-      { params: { sectionPath: path } }
-    );
-    let media: MediaItem[] = (data || []).filter((m: MediaItem) => m.type === 'image');
-    if (wantH) media = media.filter((m) => m.width >= m.height);
-    if (wantV) media = media.filter((m) => m.height > m.width);
-    media = media.filter((m) => !used.has(m.s3_key));
-    return media.length ? media[Math.floor(Math.random() * media.length)] : null;
-  } catch { return null; }
-};
-
-const prefetchChildren = async (children: Section[]): Promise<Record<string, MediaItem | null>> => {
-  const n = children.length;
-  const wantH = n === 2 || n === 4;
-  const wantV = n === 3;
-  const used = new Set<string>();
-  const out: Record<string, MediaItem | null> = {};
-  for (const child of children) {
-    let img = await pickImage(child.path, wantH, wantV, used);
-    if (!img || endsWithMedia(child.path))
-      img = await pickImage(fallbackPath(child.path), wantH, wantV, used);
-    out[child.id] = img ?? null;
-    if (img) used.add(img.s3_key);
-  }
-  return out;
-};
-
 const tileCols = (n: number) => {
   if (n === 3) return { cols: 3 };
   return { cols: 2 };
 };
 
-// ── component ─────────────────────────────────────────────────────────────────
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [hierarchical, setHierarchical] = useState<Record<string, Section[]>>({});
   const [topLevel, setTopLevel]         = useState<Section[]>([]);
   const [prefetched, setPrefetched]     = useState<Record<string, Record<string, MediaItem | null>>>({});
@@ -253,23 +191,40 @@ const LandingPage: React.FC = () => {
         (grouped['0'] || [])
           .filter((s) => grouped[s.id]?.length)
           .forEach(async (parent) => {
-            const imgs = await prefetchChildren(grouped[parent.id] || []);
+            const imgs = await prefetchSectionImages(grouped[parent.id] || []);
             setPrefetched((prev) => ({ ...prev, [parent.id]: imgs }));
           });
       } catch (e) { console.error(e); }
     })();
   }, []);
 
+  // Sync active section from location state so browser back/forward works
+  useEffect(() => {
+    const activeId = (location.state as any)?.activeId;
+    if (activeId && topLevel.length > 0) {
+      const section = topLevel.find((s) => s.id === activeId) ?? null;
+      setActive(section);
+      setAnimKey((k) => k + 1);
+    } else if (!activeId) {
+      setActive(null);
+      setAnimKey((k) => k + 1);
+    }
+  }, [location.state, topLevel]);
+
   const handleClick = (s: Section) => {
     if (hierarchical[s.id]?.length) {
-      setActive(s);
-      setAnimKey((k) => k + 1);
+      // Push a new history entry with the section ID — browser back will clear it
+      navigate('/work', { state: { activeId: s.id } });
     } else {
       navigate(sectionUrl(s.path));
     }
   };
 
-  const goBack = () => { setActive(null); setAnimKey((k) => k + 1); };
+  const goBack = () => navigate(-1);
+
+  const switchSection = (s: Section) => {
+    navigate('/work', { state: { activeId: s.id } });
+  };
 
   const children    = active ? (hierarchical[active.id] || []) : [];
   const images      = active ? (prefetched[active.id] || {}) : {};
@@ -307,7 +262,7 @@ const LandingPage: React.FC = () => {
 
                 <div style={{ display: 'flex', gap: 8 }}>
                   {prevSection ? (
-                    <button className="sibling-btn" onClick={() => { setActive(prevSection); setAnimKey((k) => k + 1); }}>
+                    <button className="sibling-btn" onClick={() => switchSection(prevSection)}>
                       <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                         <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
@@ -322,7 +277,7 @@ const LandingPage: React.FC = () => {
                     </span>
                   )}
                   {nextSection ? (
-                    <button className="sibling-btn" onClick={() => { setActive(nextSection); setAnimKey((k) => k + 1); }}>
+                    <button className="sibling-btn" onClick={() => switchSection(nextSection)}>
                       {nextSection.name}
                       <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                         <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -425,7 +380,7 @@ const LandingPage: React.FC = () => {
                         )}
 
                         <motion.div
-                          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%', background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%)', zIndex: 10, pointerEvents: 'none' }}
+                          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0) 65%)', zIndex: 10, pointerEvents: 'none' }}
                           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                           transition={{ duration: 0.4, delay: 0.2 + i * 0.06 }}
                         />
